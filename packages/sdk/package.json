@@ -1,0 +1,61 @@
+{
+    "name": "nirium",
+    "version": "0.6.1",
+    "description": "Official TypeScript SDK for the Nirium autonomous agent economy on Stellar (x402 + MPP)",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "homepage": "https://nirium.xyz",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Eras256/nirium-core-private"
+    },
+    "bugs": {
+        "url": "https://github.com/nirium/nirium/issues",
+        "email": "xvaiosx7@gmail.com"
+    },
+    "author": {
+        "name": "Nirium Protocol",
+        "email": "xvaiosx7@gmail.com",
+        "url": "https://nirium.xyz"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "lint": "eslint src/",
+        "test": "jest --passWithNoTests"
+    },
+    "dependencies": {
+        "ws": "^8.18.0",
+        "@x402/fetch": "^2.9.0",
+        "@x402/stellar": "^2.9.0",
+        "@stellar/mpp": "^0.4.0",
+        "mppx": "^0.5.5",
+        "@stellar/stellar-sdk": "^14.5.0"
+    },
+    "devDependencies": {
+        "@types/ws": "^8.5.13",
+        "typescript": "^5.7.0"
+    },
+    "keywords": [
+        "nirium",
+        "stellar",
+        "soroban",
+        "defi",
+        "sdk",
+        "agent",
+        "autonomous",
+        "treasury",
+        "x402",
+        "mpp",
+        "agentic-payments",
+        "usdc",
+        "cetes",
+        "etherfuse",
+        "rwa"
+    ],
+    "license": "Apache-2.0"
+}

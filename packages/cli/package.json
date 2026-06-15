@@ -1,0 +1,32 @@
+{
+  "name": "@nirium/cli",
+  "version": "1.0.0",
+  "description": "Nirium Autonomous Agent CLI",
+  "main": "bin/nirium.js",
+  "type": "module",
+  "bin": {
+    "nirium": "bin/nirium.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nirium",
+    "cli",
+    "agent",
+    "stellar"
+  ],
+  "author": "Nirium Team",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "axios": "^1.13.6",
+    "commander": "^11.0.0",
+    "package-json-type": "^1.1.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.30",
+    "typescript": "^5.0.0"
+  }
+}

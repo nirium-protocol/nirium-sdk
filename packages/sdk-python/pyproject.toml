@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nirium"
+version = "0.6.1"
+description = "Official Python SDK for Nirium autonomous agents on Stellar (x402 + MPP)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{name = "Nirium Protocol", email = "xvaiosx7@gmail.com"}]
+keywords = ["nirium", "stellar", "soroban", "defi", "sdk", "agent", "autonomous", "treasury", "x402", "mpp", "agentic-payments", "usdc", "cetes", "etherfuse", "rwa"]
+dependencies = [
+    "aiohttp>=3.9.0",
+    "websockets>=13.0",
+    "stellar-sdk>=11.0.0",
+]
+
+[project.urls]
+Homepage = "https://nirium.xyz"
+Repository = "https://github.com/Eras256/nirium-core-private"
+Documentation = "https://nirium.xyz/docs"
+"Bug Tracker" = "https://github.com/nirium/nirium/issues"
