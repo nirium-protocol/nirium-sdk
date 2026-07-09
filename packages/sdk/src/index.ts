@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// nirium v0.6.1 — Official TypeScript SDK (x402 + MPP)
+// nirium v0.6.2 — Official TypeScript SDK (x402 + MPP)
 // ═══════════════════════════════════════════════════════════════
 
 import WebSocket from 'ws';
@@ -24,6 +24,8 @@ export interface X402Config {
     secretKey: string;
     /** CAIP-2 network ID (e.g. 'stellar:testnet' or 'stellar:pubnet') */
     network?: string;
+    /** Soroban RPC endpoint override (defaults per network) */
+    rpcUrl?: string;
 }
 
 export interface MppConfig {
@@ -607,9 +609,12 @@ export class Agent {
     initX402(config: X402Config): void {
         const network = config.network || 'stellar:testnet';
         const signer = (createEd25519Signer as any)(config.secretKey, network);
-        const rpcUrl = network.includes('testnet')
+        // Pubnet: el SDF NO corre RPC público de mainnet — soroban.stellar.org no
+        // existe. Default al RPC público de gateway.fm (mismo default que
+        // @stellar/mpp); siempre overrideable por config.rpcUrl.
+        const rpcUrl = config.rpcUrl || (network.includes('testnet')
             ? 'https://soroban-testnet.stellar.org'
-            : 'https://soroban.stellar.org';
+            : 'https://soroban-rpc.mainnet.stellar.gateway.fm');
         const client = new (X402ClientClass as any)().register(
             'stellar:*',
             new (ExactStellarScheme as any)(signer, { url: rpcUrl })
