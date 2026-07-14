@@ -119,7 +119,7 @@ const data = await response.json();
 - [Developer Sandbox](https://nirium.xyz/sandbox)
 - [API Reference](https://nirium.xyz/docs/api)
 - [MCP Server Integration](https://nirium.xyz/docs/mcp)
-- [GitHub](https://github.com/nirium/nirium)
+- [GitHub](https://github.com/nirium-protocol/nirium-sdk)
 
 ## License
 

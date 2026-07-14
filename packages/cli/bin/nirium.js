@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // ═══════════════════════════════════════════════════════════════
-// Nirium — Autonomous Agent CLI (v1.0.0)
+// Nirium — Autonomous Agent CLI (v1.0.1)
 // ═══════════════════════════════════════════════════════════════
 
 import { Command } from 'commander';
@@ -15,7 +15,7 @@ const program = new Command();
 program
     .name('nirium')
     .description('Nirium protocol development tool')
-    .version('1.0.0');
+    .version('1.0.1');
 
 // --- COMMAND: create bot ---
 program
@@ -71,10 +71,13 @@ function scaffoldTS(dir, name) {
             "build": "tsc"
         },
         dependencies: {
-            "@nirium/sdk": "latest",
+            "nirium": "^0.6.2",
             "tsx": "^4.19.0",
             "typescript": "^5.7.0",
             "dotenv": "^16.4.5"
+        },
+        devDependencies: {
+            "@types/node": "^20.19.0"
         }
     };
 
@@ -82,24 +85,20 @@ function scaffoldTS(dir, name) {
     fs.mkdirSync(path.join(dir, 'src'));
 
     const indexSrc = `
-import { NiriumAgent } from '@nirium/sdk';
+import { Agent } from 'nirium';
 import 'dotenv/config';
 
-const agent = new NiriumAgent({
-  apiUrl: process.env.NIRIUM_API_URL || 'http://localhost:3001',
+const agent = new Agent({
+  baseUrl: process.env.NIRIUM_API_URL || 'http://localhost:3001',
   apiKey: process.env.NIRIUM_API_KEY
 });
 
-agent.on('signal', (signal) => {
-  console.log('🧬 [Signal Received]:', signal.type, signal.pair);
+agent.subscribe((signal) => {
+  console.log('🧬 [Signal Received]:', signal.signal_type, signal.pair);
   // Logic to execute on signals...
 });
 
-agent.on('connected', () => {
-  console.log('✅ Connected to Nirium Neural Loop');
-});
-
-agent.connect();
+console.log('✅ Listening for Nirium signals...');
 `;
     fs.writeFileSync(path.join(dir, 'src', 'index.ts'), indexSrc);
     fs.writeFileSync(path.join(dir, '.env'), 'NIRIUM_API_URL=http://localhost:3001\nNIRIUM_API_KEY=');
@@ -115,32 +114,32 @@ agent.connect();
 }
 
 function scaffoldPY(dir, name) {
-    const reqs = "nirium-sdk>=1.0.0\npython-dotenv>=1.0.0";
+    const reqs = "nirium>=0.6.2\npython-dotenv>=1.0.0";
     fs.writeFileSync(path.join(dir, 'requirements.txt'), reqs);
 
     const mainSrc = `
 import asyncio
 import os
-from nirium.client import NiriumAgent
+from nirium import Agent
 from dotenv import load_dotenv
 
 load_dotenv()
 
 async def main():
-    agent = NiriumAgent(
+    agent = Agent(
         api_url=os.getenv("NIRIUM_API_URL", "http://localhost:3001"),
         api_key=os.getenv("NIRIUM_API_KEY")
     )
 
     @agent.on("signal")
     async def handle_signal(signal):
-        print(f"🧬 [Signal]: {signal['type']} on {signal['pair']}")
+        print(f"🧬 [Signal]: {signal['signal_type']} on {signal['pair']}")
 
     @agent.on("connected")
     async def on_connect(data):
         print("✅ Connected to Nirium Neural Loop")
 
-    await agent.connect()
+    await agent.subscribe()
 
 if __name__ == "__main__":
     asyncio.run(main())

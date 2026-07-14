@@ -121,7 +121,7 @@ response = await agent.mpp_fetch("https://nirium-agent.fly.dev/api/v1/mpp/signal
 - [Developer Sandbox](https://nirium.xyz/sandbox)
 - [API Reference](https://nirium.xyz/docs/api)
 - [MCP Server Integration](https://nirium.xyz/docs/mcp)
-- [GitHub](https://github.com/nirium/nirium)
+- [GitHub](https://github.com/nirium-protocol/nirium-sdk)
 
 ## License
 

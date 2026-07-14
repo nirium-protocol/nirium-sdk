@@ -7,15 +7,15 @@
     "homepage": "https://nirium.xyz",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Eras256/nirium-core-private"
+        "url": "https://github.com/nirium-protocol/nirium-sdk"
     },
     "bugs": {
-        "url": "https://github.com/nirium/nirium/issues",
-        "email": "xvaiosx7@gmail.com"
+        "url": "https://github.com/nirium-protocol/nirium-sdk/issues",
+        "email": "niriumprotocol@gmail.com"
     },
     "author": {
         "name": "Nirium Protocol",
-        "email": "xvaiosx7@gmail.com",
+        "email": "niriumprotocol@gmail.com",
         "url": "https://nirium.xyz"
     },
     "files": [
