@@ -1,0 +1,63 @@
+{
+  "name": "nirium-mcp",
+  "version": "0.4.0",
+  "description": "Model Context Protocol server for Nirium — exposes market data, autonomous loop control, and x402/MPP paid signals to any MCP-compatible AI (Claude, GPT, Cursor, VS Code Copilot).",
+  "main": "dist/index.js",
+  "bin": {
+    "nirium-mcp": "dist/index.js"
+  },
+  "homepage": "https://nirium.xyz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nirium-protocol/nirium-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/nirium-protocol/nirium-sdk/issues",
+    "email": "niriumprotocol@gmail.com"
+  },
+  "author": {
+    "name": "Nirium Protocol",
+    "email": "niriumprotocol@gmail.com",
+    "url": "https://nirium.xyz"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@stellar/mpp": "^0.4.0",
+    "@stellar/stellar-sdk": "^14.0.0",
+    "@x402/core": "^2.9.0",
+    "@x402/fetch": "^2.9.0",
+    "@x402/stellar": "^2.9.0",
+    "mppx": "^0.5.5",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "nirium",
+    "mcp",
+    "model-context-protocol",
+    "stellar",
+    "soroban",
+    "agent",
+    "autonomous",
+    "treasury",
+    "x402",
+    "mpp",
+    "agentic-payments",
+    "claude",
+    "llm-tools"
+  ],
+  "license": "Apache-2.0"
+}
