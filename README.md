@@ -32,7 +32,7 @@ const market = await agent.getMarket();
 console.log(market);
 ```
 
-See [`docs/`](./docs) for full quickstarts, including **"Charge AI agents in 5 minutes"** (x402).
+See [`docs/`](./docs) for full quickstarts, including [**"Charge AI agents in 5 minutes"**](./docs/quickstart-x402.md) (x402).
 
 ## Network
 
