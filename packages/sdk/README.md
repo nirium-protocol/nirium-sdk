@@ -86,6 +86,32 @@ const response = await agent.x402Fetch('https://nirium-agent.fly.dev/api/v1/prem
 const data = await response.json();
 ```
 
+### Express x402 middleware
+
+Protect an Express endpoint with a Stellar USDC payment. Missing or invalid
+payment signatures receive `402 Payment Required`; verified payments are
+settled by the configured x402 facilitator.
+
+```bash
+npm install nirium express
+```
+
+```typescript
+import express from 'express';
+import { x402Serve } from 'nirium';
+
+const app = express();
+app.get(
+  '/premium-report',
+  x402Serve({ price: '0.02', payTo: 'G_YOUR_STELLAR_ADDRESS' }),
+  (_req, res) => res.json({ report: 'paid content' }),
+);
+app.listen(3000);
+```
+
+Testnet is the default. Use `network: 'stellar:pubnet'` for mainnet or provide
+`facilitatorUrl` to select another x402 facilitator.
+
 ### MPP — Session-Based Budget Delegation
 ```typescript
 agent.initMpp({
