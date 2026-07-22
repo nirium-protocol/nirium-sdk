@@ -17,6 +17,7 @@ Software-only: regulated partners execute settlement. Nirium never custodies cli
 | TypeScript SDK | `npm install nirium` | Client for the Nirium API, x402/MPP payments, signals, webhooks. |
 | Python SDK | `pip install nirium` | Async client with the same surface. |
 | CLI | `@nirium/cli` *(publishing soon)* | Scaffold and interact with Nirium from the terminal. |
+| Audit Trail Viewer | `npm install @nirium/audit-trail-viewer` | Standalone React widget for IPFS- and Stellar-anchored audit receipts. |
 
 ## Quickstart (TypeScript)
 
