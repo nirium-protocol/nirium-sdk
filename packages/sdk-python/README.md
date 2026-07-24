@@ -71,6 +71,42 @@ agent.init_x402(
 response = await agent.x402_fetch("https://nirium-agent.fly.dev/api/v1/premium/signals")
 ```
 
+### Protect FastAPI or Flask routes
+
+Set the Stellar settlement destination outside application source, then use the
+same decorator with either framework:
+
+```bash
+export NIRIUM_X402_PAY_TO="G_YOUR_STELLAR_ADDRESS"
+```
+
+```python
+from fastapi import FastAPI, Request
+from nirium import x402_required
+
+app = FastAPI()
+
+@app.get("/premium")
+@x402_required(price="0.02")
+async def premium(request: Request):
+    return {"report": "paid content"}
+```
+
+```python
+from flask import Flask
+from nirium import x402_required
+
+app = Flask(__name__)
+
+@app.get("/premium")
+@x402_required(price="0.02")
+def premium():
+    return {"report": "paid content"}
+```
+
+Missing or invalid `X-402-Signature` headers receive HTTP 402. The decorated
+handler runs only after the facilitator verifies and settles the payment.
+
 ### MPP — Session-Based Budget Delegation
 ```python
 agent.init_mpp(
