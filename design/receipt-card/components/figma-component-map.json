@@ -1,0 +1,318 @@
+{
+  "name": "x402 Receipt Card",
+  "version": "1.0.0",
+  "figma_version": "Styles API v2",
+  "components": [
+    {
+      "id": "receipt-card",
+      "name": "Receipt Card / Container",
+      "description": "Outer card shell with glass surface, hairline border, and top-left indigo glow.",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "VERTICAL",
+        "paddingTop": 24,
+        "paddingBottom": 24,
+        "paddingLeft": 24,
+        "paddingRight": 24,
+        "itemSpacing": 16,
+        "primaryAxisSizingMode": "AUTO",
+        "counterAxisSizingMode": "FIXED",
+        "width": 432,
+        "cornerRadius": 20,
+        "fillStyle": "card-glass",
+        "strokeStyle": "hairline",
+        "strokeWeight": 1,
+        "effectStyle": "card-rest"
+      },
+      "children": ["receipt-card/header", "receipt-card/amount", "receipt-card/metadata", "receipt-card/actions"]
+    },
+    {
+      "id": "receipt-card/header",
+      "name": "Receipt Card / Header",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "primaryAxisAlignItems": "SPACE_BETWEEN",
+        "counterAxisAlignItems": "CENTER",
+        "itemSpacing": 12
+      },
+      "children": ["receipt-card/header/title-block", "receipt-card/status-pill"]
+    },
+    {
+      "id": "receipt-card/header/title-block",
+      "name": "Header / Title Block",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "counterAxisAlignItems": "CENTER",
+        "itemSpacing": 10
+      },
+      "children": ["receipt-card/header/icon", "receipt-card/header/title-text"]
+    },
+    {
+      "id": "receipt-card/header/icon",
+      "name": "Header / Icon",
+      "type": "ellipse",
+      "properties": {
+        "width": 28,
+        "height": 28,
+        "fillStyle": "accent-indigo-glow",
+        "strokeStyle": "hairline",
+        "strokeWeight": 1
+      }
+    },
+    {
+      "id": "receipt-card/header/title-text",
+      "name": "Header / Title Text",
+      "type": "text",
+      "properties": {
+        "characters": "x402 Payment",
+        "textStyle": "value",
+        "fontWeight": 600
+      }
+    },
+    {
+      "id": "receipt-card/status-pill",
+      "name": "Status Pill",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "counterAxisAlignItems": "CENTER",
+        "itemSpacing": 6,
+        "paddingLeft": 8,
+        "paddingRight": 10,
+        "paddingTop": 4,
+        "paddingBottom": 4,
+        "cornerRadius": 999,
+        "fillStyle": "status-{status}-bg"
+      },
+      "children": ["status-pill/dot", "status-pill/label"],
+      "variants": {
+        "status": ["settled", "pending", "failed"]
+      }
+    },
+    {
+      "id": "status-pill/dot",
+      "name": "Status Pill / Dot",
+      "type": "ellipse",
+      "properties": {
+        "width": 6,
+        "height": 6,
+        "fillStyle": "status-{status}-fg"
+      }
+    },
+    {
+      "id": "status-pill/label",
+      "name": "Status Pill / Label",
+      "type": "text",
+      "properties": {
+        "textStyle": "pill",
+        "fillStyle": "status-{status}-fg"
+      },
+      "variants": {
+        "status": ["Settled", "Pending…", "Failed"]
+      }
+    },
+    {
+      "id": "receipt-card/amount",
+      "name": "Receipt Card / Amount",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "VERTICAL",
+        "itemSpacing": 4
+      },
+      "children": ["receipt-card/amount/primary", "receipt-card/amount/secondary"]
+    },
+    {
+      "id": "receipt-card/amount/primary",
+      "name": "Amount / Primary",
+      "type": "text",
+      "properties": {
+        "textStyle": "amount",
+        "fillStyle": "text-primary",
+        "characters": "12.500000 USDC",
+        "fontFeatures": "'tnum' 1, 'cv11' 1"
+      }
+    },
+    {
+      "id": "receipt-card/amount/secondary",
+      "name": "Amount / Secondary",
+      "type": "text",
+      "properties": {
+        "textStyle": "amount-currency",
+        "fillStyle": "text-tertiary",
+        "characters": "≈ $12.50 USD"
+      }
+    },
+    {
+      "id": "receipt-card/metadata",
+      "name": "Receipt Card / Metadata",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "VERTICAL",
+        "itemSpacing": 10,
+        "paddingTop": 16,
+        "paddingBottom": 16,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "fillStyle": "card-glass-strong",
+        "cornerRadius": 12,
+        "strokeStyle": "hairline",
+        "strokeWeight": 1
+      },
+      "children": ["metadata-row/tx-hash", "metadata-row/network", "metadata-row/ipfs-cid", "metadata-row/memo"]
+    },
+    {
+      "id": "metadata-row/tx-hash",
+      "name": "Metadata Row / Tx Hash",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "primaryAxisAlignItems": "SPACE_BETWEEN",
+        "counterAxisAlignItems": "CENTER",
+        "itemSpacing": 8
+      },
+      "children": ["metadata-row/label", "metadata-row/value-with-action"]
+    },
+    {
+      "id": "metadata-row/label",
+      "name": "Metadata Row / Label",
+      "type": "text",
+      "properties": {
+        "textStyle": "label",
+        "fillStyle": "text-tertiary"
+      },
+      "instances": [
+        { "text": "Tx Hash" },
+        { "text": "Network" },
+        { "text": "IPFS CID" },
+        { "text": "Memo" }
+      ]
+    },
+    {
+      "id": "metadata-row/value-with-action",
+      "name": "Metadata Row / Value + Action",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "counterAxisAlignItems": "CENTER",
+        "itemSpacing": 6
+      },
+      "children": ["metadata-row/value", "icon-button/copy-or-open"]
+    },
+    {
+      "id": "metadata-row/value",
+      "name": "Metadata Row / Value",
+      "type": "text",
+      "properties": {
+        "textStyle": "value-mono",
+        "fillStyle": "text-primary"
+      },
+      "instances": [
+        { "text": "0xab12…cd34", "truncation": "middle" },
+        { "text": "Stellar Testnet", "mono": false },
+        { "text": "bafy…xyz12", "truncation": "middle" },
+        { "text": "order #4821", "mono": false }
+      ]
+    },
+    {
+      "id": "icon-button/copy-or-open",
+      "name": "Icon Button / Copy or Open",
+      "type": "frame",
+      "properties": {
+        "width": 28,
+        "height": 28,
+        "cornerRadius": 8,
+        "fillStyle": "card-glass",
+        "strokeStyle": "hairline",
+        "strokeWeight": 1
+      }
+    },
+    {
+      "id": "receipt-card/actions",
+      "name": "Receipt Card / Actions",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "itemSpacing": 8
+      },
+      "children": ["button/primary", "button/secondary"]
+    },
+    {
+      "id": "button/primary",
+      "name": "Button / Primary",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER",
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "cornerRadius": 10,
+        "fillStyle": "accent-indigo-500"
+      },
+      "children": ["button/primary/label"]
+    },
+    {
+      "id": "button/primary/label",
+      "name": "Button / Primary / Label",
+      "type": "text",
+      "properties": {
+        "textStyle": "value",
+        "fillStyle": "text-inverse",
+        "fontWeight": 600,
+        "characters": "View on Stellar Expert"
+      }
+    },
+    {
+      "id": "button/secondary",
+      "name": "Button / Secondary",
+      "type": "frame",
+      "properties": {
+        "layoutMode": "HORIZONTAL",
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER",
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "cornerRadius": 10,
+        "fillStyle": "card-glass",
+        "strokeStyle": "hairline",
+        "strokeWeight": 1
+      },
+      "children": ["button/secondary/label"]
+    },
+    {
+      "id": "button/secondary/label",
+      "name": "Button / Secondary / Label",
+      "type": "text",
+      "properties": {
+        "textStyle": "value",
+        "fillStyle": "text-primary",
+        "fontWeight": 500,
+        "characters": "Share"
+      }
+    }
+  ],
+  "styles": {
+    "color": {
+      "surface-canvas": "#07080C",
+      "surface-card-base": "#101218",
+      "text-primary": "#F5F7FA",
+      "text-secondary": "#A8B0BF",
+      "text-tertiary": "#6C7588",
+      "accent-indigo-500": "#5B6CFF",
+      "status-settled-fg": "#34D399",
+      "status-pending-fg": "#FBBF24",
+      "status-failed-fg": "#FB7185"
+    },
+    "typography": {
+      "amount": { "fontSize": 32, "lineHeight": 40, "fontWeight": 600 },
+      "value": { "fontSize": 13, "lineHeight": 20, "fontWeight": 500 },
+      "label": { "fontSize": 11, "lineHeight": 16, "fontWeight": 600, "textCase": "UPPER" }
+    }
+  }
+}
