@@ -1,0 +1,23 @@
+{
+  "name": "@nirium/express-x402",
+  "version": "0.1.0",
+  "description": "Express.js x402 micropayment middleware helper for Nirium / Stellar (bounty #9).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.12",
+    "typescript": "^5.4.0"
+  },
+  "license": "MIT"
+}
