@@ -11,6 +11,9 @@ import { createEd25519Signer } from '@x402/stellar';
 import { ExactStellarScheme } from '@x402/stellar/exact/client';
 import * as MppxModule from 'mppx';
 
+export { x402Serve } from './express';
+export type { X402ServeConfig } from './express';
+
 export interface AgentConfig {
     apiKey: string;
     baseUrl?: string;

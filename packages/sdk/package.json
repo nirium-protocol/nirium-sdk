@@ -29,16 +29,32 @@
         "test": "jest --passWithNoTests"
     },
     "dependencies": {
-        "ws": "^8.18.0",
+        "@stellar/mpp": "^0.4.0",
+        "@stellar/stellar-sdk": "^14.5.0",
+        "@x402/core": "~2.9.0",
+        "@x402/express": "~2.9.0",
         "@x402/fetch": "^2.9.0",
         "@x402/stellar": "^2.9.0",
-        "@stellar/mpp": "^0.4.0",
         "mppx": "^0.5.5",
-        "@stellar/stellar-sdk": "^14.5.0"
+        "ws": "^8.18.0"
     },
     "devDependencies": {
-        "@types/ws": "^8.5.13",
-        "typescript": "^5.7.0"
+        "@types/express": "^5.0.6",
+        "@types/jest": "^29.5.14",
+        "@types/ws": "^8.18.1",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.4.11",
+        "typescript": "^5.9.3"
+    },
+    "peerDependencies": {
+        "express": "^4.0.0 || ^5.0.0"
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "testMatch": [
+            "<rootDir>/src/**/*.test.ts"
+        ]
     },
     "keywords": [
         "nirium",

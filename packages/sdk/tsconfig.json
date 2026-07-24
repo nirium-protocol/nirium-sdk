@@ -1,6 +1,11 @@
 {
-    "extends": "../../tsconfig.json",
     "compilerOptions": {
+        "target": "ES2022",
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "strict": true,
         "outDir": "./dist",
         "rootDir": "./src",
         "declaration": true
@@ -10,6 +15,7 @@
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "src/**/*.test.ts"
     ]
 }
