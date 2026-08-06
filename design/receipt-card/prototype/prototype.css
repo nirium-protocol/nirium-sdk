@@ -1,0 +1,556 @@
+/* x402 Receipt Card — interactive prototype styles
+   Companion to ../tokens/tokens.css and SPEC.md
+*/
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background:
+    radial-gradient(1200px 800px at 0% 0%, rgba(91, 108, 255, 0.10), transparent 60%),
+    radial-gradient(800px 600px at 100% 100%, rgba(91, 108, 255, 0.06), transparent 60%),
+    var(--surface-canvas);
+  background-attachment: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  background: var(--surface-card-glass-strong);
+  border: 1px solid var(--surface-hairline);
+  border-radius: 4px;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-5) var(--space-12);
+}
+
+.page-header {
+  margin-bottom: var(--space-8);
+  text-align: center;
+}
+
+.page-header h1 {
+  margin: 0 0 var(--space-2);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.state-toggle {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  margin: 0 auto var(--space-6);
+  background: var(--surface-card-base);
+  border: 1px solid var(--surface-hairline);
+  border-radius: var(--radius-pill);
+  width: fit-content;
+}
+
+.state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  transition: background var(--motion-state-change), color var(--motion-state-change);
+}
+
+.state-btn:hover {
+  color: var(--text-primary);
+}
+
+.state-btn.is-active {
+  background: var(--surface-card-glass-strong);
+  color: var(--text-primary);
+}
+
+.state-btn:focus-visible {
+  outline: 2px solid var(--accent-indigo-500);
+  outline-offset: 2px;
+}
+
+.state-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.state-dot--settled { color: var(--status-settled-fg); }
+.state-dot--pending { color: var(--status-pending-fg); }
+.state-dot--failed { color: var(--status-failed-fg); }
+
+/* Card */
+.receipt-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    var(--surface-card-base);
+  border: 1px solid var(--surface-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-rest);
+  overflow: hidden;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  transition: transform var(--motion-hover-lift), border-color var(--motion-state-change), box-shadow var(--motion-hover-lift);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.receipt-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(600px 300px at 10% -10%, var(--accent-indigo-glow), transparent 60%);
+  opacity: 0.9;
+}
+
+.receipt-card[data-state="failed"]::before {
+  background: radial-gradient(600px 300px at 10% -10%, rgba(251, 113, 133, 0.18), transparent 60%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .receipt-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--surface-hairline-strong);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* Header */
+.card-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card-title-block {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.card-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background var(--motion-state-change), color var(--motion-state-change);
+}
+
+.receipt-card[data-state="settled"] .status-pill {
+  background: var(--status-settled-bg);
+  color: var(--status-settled-fg);
+}
+
+.receipt-card[data-state="pending"] .status-pill {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-fg);
+}
+
+.receipt-card[data-state="failed"] .status-pill {
+  background: var(--status-failed-bg);
+  color: var(--status-failed-fg);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.receipt-card[data-state="pending"] .status-dot {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  animation: spin var(--motion-pill-spin);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt-card[data-state="pending"] .status-dot { animation: none; }
+}
+
+/* Amount */
+.amount {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+}
+
+.receipt-card[data-state="pending"] .amount { opacity: 0.78; }
+
+.receipt-card[data-state="failed"] .amount-primary {
+  text-decoration: line-through;
+  color: var(--text-secondary) !important;
+}
+
+.receipt-card[data-state="failed"] .amount-currency { color: var(--text-tertiary) !important; }
+
+.amount-primary {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.amount-currency {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-secondary);
+}
+
+.amount-secondary {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.receipt-card[data-state="failed"] .amount-secondary {
+  color: var(--status-failed-fg);
+}
+
+/* Metadata */
+.metadata {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--space-4);
+  background: var(--surface-card-glass-strong);
+  border: 1px solid var(--surface-hairline);
+  border-radius: var(--radius-md);
+}
+
+.receipt-card[data-state="failed"] .metadata {
+  background: rgba(251, 113, 133, 0.04);
+  border-color: rgba(251, 113, 133, 0.16);
+}
+
+.metadata-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 28px;
+}
+
+.metadata-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.metadata-value-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.metadata-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.metadata-value--mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-secondary);
+  background: var(--surface-card-glass);
+  border: 1px solid var(--surface-hairline);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: color var(--motion-state-change), border-color var(--motion-state-change), background var(--motion-state-change);
+  flex-shrink: 0;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--surface-hairline-strong);
+  background: var(--surface-card-glass-strong);
+  text-decoration: none;
+  outline: none;
+}
+
+.icon-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-indigo-500);
+}
+
+.icon-btn--link {
+  text-decoration: none;
+}
+
+/* Actions */
+.actions {
+  position: relative;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.receipt-card[data-state="pending"] .actions { opacity: 0.55; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex: 1;
+  height: 44px;
+  padding: 0 var(--space-4);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform var(--motion-hover-lift), background var(--motion-state-change), border-color var(--motion-state-change);
+  text-decoration: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent-indigo-500);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--accent-indigo-500);
+  color: var(--text-inverse);
+}
+
+.receipt-card[data-state="failed"] .btn-primary {
+  background: var(--status-failed-fg);
+  color: var(--text-inverse);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--surface-card-glass);
+  color: var(--text-primary);
+  border-color: var(--surface-hairline);
+  flex: 0 0 128px;
+}
+
+.btn-secondary:hover {
+  background: var(--surface-card-glass-strong);
+  border-color: var(--surface-hairline-strong);
+}
+
+.receipt-card[data-state="failed"] .actions .btn-primary {
+  flex: 0 0 180px;
+}
+
+.receipt-card[data-state="failed"] .actions .btn-secondary {
+  flex: 1;
+}
+
+/* Demo info */
+.demo-info {
+  margin: var(--space-8) auto 0;
+  max-width: 480px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.demo-info h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.demo-info p {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.design-credit {
+  margin-top: var(--space-6) !important;
+  font-size: 12px !important;
+  color: var(--text-tertiary) !important;
+}
+
+/* Toast */
+.toast-region {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+  z-index: 100;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--surface-card-base);
+  border: 1px solid var(--surface-hairline-strong);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card-rest);
+  pointer-events: auto;
+  animation: toast-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .page {
+    padding: var(--space-6) var(--space-4) var(--space-10);
+  }
+  .page-header h1 {
+    font-size: 22px;
+  }
+  .state-toggle {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .state-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .receipt-card {
+    padding: var(--space-5);
+  }
+  .actions {
+    flex-direction: column;
+  }
+  .btn-secondary {
+    flex: 1 !important;
+  }
+}

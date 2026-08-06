@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" width="480" height="560" role="img" aria-label="x402 receipt card, settled state">
+  <title>x402 Receipt Card — Settled</title>
+  <defs>
+    <linearGradient id="settled-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#07080C"/>
+      <stop offset="100%" stop-color="#0E1018"/>
+    </linearGradient>
+    <radialGradient id="settled-glow" cx="0.15" cy="0.1" r="0.6">
+      <stop offset="0%" stop-color="rgba(91,108,255,0.32)"/>
+      <stop offset="100%" stop-color="rgba(91,108,255,0)"/>
+    </radialGradient>
+    <linearGradient id="settled-glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.07)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
+    </linearGradient>
+    <linearGradient id="settled-inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.05)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.02)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="480" height="560" fill="url(#settled-bg)"/>
+  <rect width="480" height="560" fill="url(#settled-glow)"/>
+
+  <!-- Card -->
+  <g transform="translate(24, 40)">
+    <!-- Glass surface -->
+    <rect width="432" height="480" rx="20" ry="20" fill="url(#settled-glass)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <!-- Top hairline highlight -->
+    <rect x="0.5" y="0.5" width="431" height="479" rx="19.5" ry="19.5" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+    <!-- Header -->
+    <g transform="translate(24, 24)">
+      <!-- Icon circle -->
+      <circle cx="14" cy="14" r="14" fill="rgba(91,108,255,0.18)" stroke="rgba(255,255,255,0.10)"/>
+      <circle cx="14" cy="14" r="5" fill="none" stroke="#7C8CFF" stroke-width="1.5"/>
+      <circle cx="14" cy="14" r="1.5" fill="#7C8CFF"/>
+
+      <!-- Title -->
+      <text x="38" y="13" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#F5F7FA">x402 Payment</text>
+      <text x="38" y="28" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="500" fill="#6C7588">Settled · 3s ago</text>
+
+      <!-- Status pill (right-aligned) -->
+      <g transform="translate(304, 0)">
+        <rect width="80" height="22" rx="11" ry="11" fill="rgba(52,211,153,0.14)"/>
+        <circle cx="11" cy="11" r="3" fill="#34D399"/>
+        <text x="20" y="15" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#34D399" letter-spacing="0.02em">Settled</text>
+      </g>
+    </g>
+
+    <!-- Divider -->
+    <line x1="24" y1="78" x2="408" y2="78" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+    <!-- Amount -->
+    <g transform="translate(24, 96)">
+      <text font-family="Inter, system-ui, sans-serif" font-size="32" font-weight="600" fill="#F5F7FA" letter-spacing="-0.6">12.500000<tspan font-size="18" font-weight="500" fill="#A8B0BF" letter-spacing="-0.18" dx="6">USDC</tspan></text>
+      <text y="28" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="500" fill="#6C7588">≈ $12.50 USD</text>
+    </g>
+
+    <!-- Metadata panel -->
+    <g transform="translate(24, 168)">
+      <rect width="384" height="180" rx="12" ry="12" fill="url(#settled-inner)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+      <!-- Row 1: Tx Hash -->
+      <g transform="translate(16, 14)">
+        <text font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#6C7588" letter-spacing="0.88">TX HASH</text>
+        <g transform="translate(0, 16)">
+          <text font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#F5F7FA">0xab12…cd34</text>
+          <!-- Copy button -->
+          <g transform="translate(320, -8)">
+            <rect width="28" height="28" rx="8" ry="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+            <rect x="9" y="10" width="11" height="11" rx="1.5" ry="1.5" fill="none" stroke="#A8B0BF" stroke-width="1.2"/>
+            <rect x="7" y="8" width="11" height="11" rx="1.5" ry="1.5" fill="rgba(255,255,255,0.04)" stroke="#A8B0BF" stroke-width="1.2"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- Row 2: Network -->
+      <g transform="translate(16, 64)">
+        <text font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#6C7588" letter-spacing="0.88">NETWORK</text>
+        <text y="16" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="500" fill="#F5F7FA">Stellar Testnet</text>
+      </g>
+
+      <!-- Row 3: IPFS CID -->
+      <g transform="translate(16, 102)">
+        <text font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="#6C7588" letter-spacing="0.88">IPFS CID</text>
+        <g transform="translate(0, 16)">
+          <text font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#F5F7FA">bafy…xyz12</text>
+          <!-- Open button -->
+          <g transform="translate(320, -8)">
+            <rect width="28" height="28" rx="8" ry="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+            <path d="M10 14 L18 14 M14 10 L18 14 L14 18" fill="none" stroke="#A8B0BF" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- Actions -->
+    <g transform="translate(24, 380)">
+      <!-- Primary -->
+      <rect width="248" height="44" rx="10" ry="10" fill="#5B6CFF"/>
+      <text x="124" y="27" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#07080C">View on Stellar Expert</text>
+
+      <!-- Secondary -->
+      <g transform="translate(256, 0)">
+        <rect width="128" height="44" rx="10" ry="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+        <text x="64" y="27" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="500" fill="#F5F7FA">Share</text>
+      </g>
+    </g>
+  </g>
+</svg>
