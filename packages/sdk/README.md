@@ -112,6 +112,66 @@ const data = await response.json();
 | **x402 Premium** | `/api/v1/premium/signals` ($0.02 USDC), `/api/v1/premium/market` ($0.05 USDC) |
 | **MPP** | `/api/v1/mpp/signals`, `/api/v1/mpp/market` |
 
+### x402 Metrics — Observability Wrapper
+
+Wrap your `x402Serve` handler with `x402Metrics` to get Prometheus-format counters, histograms, and revenue tracking — no changes to your payment logic.
+
+```typescript
+import express from 'express';
+import { x402Serve, x402Metrics } from 'nirium';
+
+const app = express();
+
+const { handler, metricsHandler } = x402Metrics(
+  x402Serve({
+    payTo: 'G...',
+    routes: { 'GET /signals': '$0.02' },
+    facilitatorApiKey: 'oz_...',
+  }),
+);
+
+app.use('/premium', handler);
+app.get('/metrics', metricsHandler); // no payment required
+
+app.listen(3000);
+```
+
+Scrape the endpoint with curl:
+
+```bash
+curl -s http://localhost:3000/metrics
+```
+
+Output:
+
+```
+# HELP x402_challenges_total Total 402 payment challenges issued
+# TYPE x402_challenges_total counter
+x402_challenges_total{route="GET /signals"} 12
+# HELP x402_verify_success_total Total successful payment verifications
+# TYPE x402_verify_success_total counter
+x402_verify_success_total{route="GET /signals"} 8
+# HELP x402_settle_success_total Total successful settlements
+# TYPE x402_settle_success_total counter
+x402_settle_success_total{route="GET /signals"} 8
+# HELP x402_revenue_total Revenue collected per route and asset
+# TYPE x402_revenue_total counter
+x402_revenue_total{route="GET /signals",asset="USDC"} 160000
+# HELP x402_settlement_latency_seconds Request latency in seconds (approximate settlement time)
+# TYPE x402_settlement_latency_seconds histogram
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="0.1"} 5
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="0.5"} 7
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="1"} 8
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="2.5"} 8
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="5"} 8
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="10"} 8
+x402_settlement_latency_seconds_bucket{route="GET /signals",le="+Inf"} 8
+x402_settlement_latency_seconds_sum{route="GET /signals"} 3.42
+x402_settlement_latency_seconds_count{route="GET /signals"} 8
+```
+
+No payer addresses or PII are included in metrics output — aggregates only.
+
 ## Payouts
 
 Batch disbursement, non-custodial: the node builds an **unsigned** transaction, you sign it with your own wallet and broadcast it. Nirium never holds funds and never sees your keys.
