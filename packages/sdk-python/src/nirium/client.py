@@ -50,6 +50,7 @@ class Agent:
             self.headers["Authorization"] = f"Bearer {token_local}"
 
         self.callbacks: Dict[str, List[Callable]] = {"signal": [], "log": [], "connected": []}
+        self.last_x402_settlement: Optional[Dict[str, Any]] = None
 
     # ─── Decorators ────────────────────────────────────────────
 
@@ -542,7 +543,51 @@ class Agent:
         prepared.transaction.fee = 100 + int(sim.min_resource_fee)
         return prepared.to_xdr()
 
-    async def x402_fetch(self, url: str, method: str = "GET") -> Dict[str, Any]:
+    def _x402_http_payload(self, body: Optional[Any]) -> Dict[str, Any]:
+        if body is None:
+            return {}
+        if isinstance(body, (dict, list)):
+            return {"json": body}
+        return {"data": body}
+
+    def _x402_store_settlement(self, headers: Any) -> None:
+        raw = (
+            headers.get("PAYMENT-RESPONSE")
+            or headers.get("payment-response")
+            or headers.get("X-PAYMENT-RESPONSE")
+            or headers.get("x-payment-response")
+            or headers.get("Payment-Receipt")
+            or headers.get("payment-receipt")
+        )
+        if not raw:
+            self.last_x402_settlement = None
+            return
+        try:
+            decoded = json.loads(_b64.b64decode(raw).decode("utf-8"))
+        except (ValueError, json.JSONDecodeError, TypeError):
+            try:
+                decoded = json.loads(raw)
+            except (ValueError, json.JSONDecodeError, TypeError):
+                self.last_x402_settlement = None
+                return
+        self.last_x402_settlement = decoded if isinstance(decoded, dict) else None
+
+    async def _x402_read_payload(self, resp: Any) -> Dict[str, Any]:
+        text = await resp.text()
+        if not text:
+            return {}
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return {"body": text}
+        return parsed if isinstance(parsed, dict) else {"body": parsed}
+
+    async def x402_fetch(
+        self,
+        url: str,
+        method: str = "GET",
+        body: Optional[Any] = None,
+    ) -> Dict[str, Any]:
         """
         Fetch a paid resource via x402 (protocol v2).
 
@@ -550,15 +595,20 @@ class Agent:
         header, signs a Soroban auth entry for the exact amount, and retries
         with the ``PAYMENT-SIGNATURE`` header.
 
+        ``body`` is forwarded on both the challenge request and the paid retry
+        so POST/PUT callers do not need a second payment client.
+
         Returns the JSON payload from the paid resource.
         """
         if not hasattr(self, "_x402_keypair"):
             raise RuntimeError("x402 client not initialized. Call agent.init_x402() first.")
 
+        payload = self._x402_http_payload(body)
+        self.last_x402_settlement = None
         async with aiohttp.ClientSession() as session:
-            async with session.request(method, url) as resp:
+            async with session.request(method, url, **payload) as resp:
                 if resp.status != 402:
-                    return await resp.json()
+                    return await self._x402_read_payload(resp)
                 # v2 entrega los requirements en un header base64; el body va vacío.
                 raw = resp.headers.get("payment-required")
 
@@ -589,14 +639,15 @@ class Agent:
             # v2 usa PAYMENT-SIGNATURE. X-PAYMENT es de v1: mandarlo hace que el
             # servidor ignore el pago por completo y reemita el 402 sin explicar.
             async with session.request(
-                method, url, headers={"PAYMENT-SIGNATURE": header}
+                method, url, headers={"PAYMENT-SIGNATURE": header}, **payload
             ) as paid:
                 if paid.status >= 400:
-                    body = await paid.text()
+                    rejected = await paid.text()
                     raise RuntimeError(
-                        f"x402 payment rejected (HTTP {paid.status}): {body[:300]}"
+                        f"x402 payment rejected (HTTP {paid.status}): {rejected[:300]}"
                     )
-                return await paid.json()
+                self._x402_store_settlement(paid.headers)
+                return await self._x402_read_payload(paid)
 
     # ─── MPP Protocol (Charge Mode) ─────────────────────────
 

@@ -111,6 +111,16 @@ npx tsx charge-agent.ts
 | Transaction cannot be found | Make sure you are checking Stellar testnet and that the payment was not rejected before settlement. |
 | Mainnet funds at risk | Stop and switch back to `network: "stellar:testnet"` with a testnet account. |
 
+## Python / LangChain
+
+LangChain agents can pay the same endpoint through `NiriumX402Tool`, which wraps `init_x402` / `x402_fetch` and never exposes the Stellar secret to the model:
+
+```bash
+pip install 'nirium[langchain]'
+```
+
+See [`examples/langchain-x402-agent`](../examples/langchain-x402-agent) for a runnable ReAct-style agent.
+
 ## Next Steps
 
 - Move the secret key into your normal secret manager before deploying.

@@ -15,7 +15,7 @@ Software-only and non-custodial: regulated partners execute settlement, the clie
 | Package | Install | Version | Description |
 |---|---|---|---|
 | TypeScript SDK | `npm install nirium` | [![npm](https://img.shields.io/npm/v/nirium)](https://www.npmjs.com/package/nirium) | Client for the Nirium API, x402/MPP payments, signals, webhooks, plus `x402Serve()` to charge for your own API. |
-| Python SDK | `pip install nirium` | [![PyPI](https://img.shields.io/pypi/v/nirium)](https://pypi.org/project/nirium/) | Async client with the same surface. |
+| Python SDK | `pip install nirium` · `pip install 'nirium[langchain]'` | [![PyPI](https://img.shields.io/pypi/v/nirium)](https://pypi.org/project/nirium/) | Async client with the same surface, plus `NiriumX402Tool` for LangChain agents. |
 | MCP server | `npx nirium-mcp` | [![npm](https://img.shields.io/npm/v/nirium-mcp)](https://www.npmjs.com/package/nirium-mcp) | 14 tools for Claude Desktop, Cursor, and any MCP-compatible IDE. |
 | CLI | `npm install -g nirium-cli` | [![npm](https://img.shields.io/npm/v/nirium-cli)](https://www.npmjs.com/package/nirium-cli) | Scaffold and interact with Nirium from the terminal. |
 
@@ -50,7 +50,7 @@ app.use('/premium', x402Serve({
 
 Any AI agent can now pay for your endpoint in USDC: no account, no card, no subscription, no human awake.
 
-See [`docs/`](./docs) for full quickstarts, including [**"Charge AI agents in 5 minutes"**](./docs/quickstart-x402.md), and [`examples/`](./examples) for runnable Express and Next.js integrations. For real production findings (not marketing copy), see the [**devlog**](./docs/devlog.md).
+See [`docs/`](./docs) for full quickstarts, including [**"Charge AI agents in 5 minutes"**](./docs/quickstart-x402.md), and [`examples/`](./examples) for runnable Express, Next.js, and [LangChain x402](./examples/langchain-x402-agent) integrations. For real production findings (not marketing copy), see the [**devlog**](./docs/devlog.md).
 
 ## Networks
 

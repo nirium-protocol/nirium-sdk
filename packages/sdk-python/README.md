@@ -8,6 +8,8 @@ Nirium agents rebalance USDC ↔ CETES (tokenized Mexican T-bills via Etherfuse)
 
 ```bash
 pip install nirium
+# Optional LangChain adapter
+pip install 'nirium[langchain]'
 ```
 
 ## Quick Start
@@ -70,6 +72,33 @@ agent.init_x402(
 
 response = await agent.x402_fetch("https://nirium-agent.fly.dev/api/v1/premium/signals")
 ```
+
+### LangChain tool — pay x402 from any agent
+
+`NiriumX402Tool` is a LangChain `BaseTool` that wraps the same `init_x402` / `x402_fetch` client. A ReAct-style agent can pay a protected Stellar endpoint as a normal tool call. The Stellar secret is constructor/env configuration only: it never appears in the tool description, args schema, error text, or return value.
+
+```python
+import os
+from langchain.agents import create_agent
+from nirium import NiriumX402Tool
+
+tool = NiriumX402Tool(
+    secret_key=os.environ["STELLAR_SECRET_KEY"],  # or set the env var and omit this
+    network="stellar:testnet",
+)
+
+agent = create_agent(model="gpt-4o-mini", tools=[tool])
+result = agent.invoke({
+    "messages": [{
+        "role": "user",
+        "content": "Fetch https://nirium-agent.fly.dev/api/v1/premium/signals",
+    }]
+})
+```
+
+Environment variables: `STELLAR_SECRET_KEY` (or `STELLAR_TESTNET_SECRET_KEY`), optional `NIRIUM_X402_NETWORK` (default `stellar:testnet`).
+
+Runnable example: [`examples/langchain-x402-agent`](../../examples/langchain-x402-agent).
 
 ### MPP — Session-Based Budget Delegation
 ```python
@@ -144,6 +173,7 @@ Anchor a **hash** rather than the data itself: IPFS content cannot be deleted, s
 | Admin | `configure_llm()` |
 | WebSocket | `subscribe()`, `on()` decorator |
 | x402 Payments | `init_x402()`, `x402_fetch()` |
+| LangChain | `NiriumX402Tool`, `create_nirium_x402_tool()` |
 | MPP Payments | `init_mpp()`, `mpp_fetch()` |
 
 ## Requirements
@@ -151,6 +181,7 @@ Anchor a **hash** rather than the data itself: IPFS content cannot be deleted, s
 - Python >= 3.10
 - aiohttp >= 3.9.0
 - websockets >= 13.0
+- langchain-core >= 0.3.0 (only for `nirium[langchain]`)
 
 ## Links
 
