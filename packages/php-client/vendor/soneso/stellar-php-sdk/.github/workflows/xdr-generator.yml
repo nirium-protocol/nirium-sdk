@@ -1,0 +1,85 @@
+name: XDR Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/xdr-generator/**'
+      - 'Soneso/StellarSDK/Xdr/**'
+      - 'Makefile'
+      - '.github/workflows/xdr-generator.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tools/xdr-generator/**'
+      - 'Soneso/StellarSDK/Xdr/**'
+      - 'Makefile'
+      - '.github/workflows/xdr-generator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xdr-generator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snapshot-tests:
+    name: Snapshot Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run snapshot tests
+        run: make xdr-generator-test
+
+  drift-detection:
+    name: Drift Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2.37.2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, json, bcmath, gmp, pcntl, sodium
+          tools: composer:v2
+
+      - name: Install composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Regenerate XDR types
+        run: make xdr-update
+
+      - name: Check for drift
+        run: |
+          if ! git diff --exit-code Soneso/StellarSDK/Xdr/ \
+              Soneso/StellarSDKTests/Unit/Xdr/Sep51/EnumRoundTripTest.php \
+              Soneso/StellarSDKTests/Unit/Xdr/Sep51/CorpusRoundTripTest.php \
+              Soneso/StellarSDKTests/Unit/Xdr/Sep51/UnionArmRoundTripTest.php \
+              Soneso/StellarSDKTests/Unit/Xdr/Sep51/StructRoundTripTest.php \
+              Soneso/StellarSDKTests/Unit/Xdr/Sep51/UnionArmRejectionTest.php; then
+            echo "::error::Generated XDR files are out of date. Run 'make xdr-update' and commit the changes."
+            exit 1
+          fi
+          if [ -n "$(git ls-files --others --exclude-standard Soneso/StellarSDK/Xdr/)" ]; then
+            echo "::error::Untracked generated XDR files found. Run 'make xdr-update' and commit the new files."
+            git ls-files --others --exclude-standard Soneso/StellarSDK/Xdr/
+            exit 1
+          fi
+
+  validation:
+    name: Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate generated types
+        run: make xdr-validate

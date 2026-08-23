@@ -1,0 +1,71 @@
+<?php declare(strict_types=1);
+
+// Copyright 2025 The Stellar PHP SDK Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the LICENSE file.
+
+namespace Soneso\StellarSDK\Soroban\Responses;
+
+/**
+ * Transaction events container for protocol version >= 23
+ *
+ * @package Soneso\StellarSDK\Soroban\Responses
+ */
+class TransactionEvents
+{
+    /**
+     * @param array<string>|null $transactionEventsXdr Base64-encoded slice of xdr.TransactionEvent
+     * @param array<array<string>>|null $contractEventsXdr Base64-encoded slice of array [xdr.ContractEvent] for each operation
+     */
+    public function __construct(
+        public ?array $transactionEventsXdr = null,
+        public ?array $contractEventsXdr = null,
+    )
+    {
+    }
+
+    /**
+     * Creates an instance from JSON-RPC response data
+     *
+     * @param array<string,mixed> $json The JSON response data
+     * @return static The created instance
+     */
+    public static function fromJson(array $json): TransactionEvents
+    {
+        /**
+         * @var array<string>|null $transactionEventsXdr
+         */
+        $transactionEventsXdr = null;
+        if (isset($json["transactionEventsXdr"])) {
+            $transactionEventsXdr = array();
+            foreach ($json["transactionEventsXdr"] as $val) {
+                $transactionEventsXdr[] = $val;
+            }
+        }
+        /**
+         * @var array<array<string>>|null $contractEventsXdr
+         */
+        $contractEventsXdr = null;
+        if (isset($json["contractEventsXdr"])) {
+            $contractEventsXdr = array();
+            foreach ($json["contractEventsXdr"] as $val) {
+                if (is_array($val)) {
+                    /**
+                     * @var array<string> $nextOperationEvents
+                     */
+                    $nextOperationEvents = array();
+                    foreach($val as $event) {
+                        $nextOperationEvents[] = $event;
+                    }
+                    $contractEventsXdr[] = $nextOperationEvents;
+                }
+            }
+        }
+
+        return new TransactionEvents(
+            transactionEventsXdr: $transactionEventsXdr,
+            contractEventsXdr: $contractEventsXdr,
+        );
+    }
+
+}

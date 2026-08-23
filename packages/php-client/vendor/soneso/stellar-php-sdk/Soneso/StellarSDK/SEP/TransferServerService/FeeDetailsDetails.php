@@ -1,0 +1,48 @@
+<?php declare(strict_types=1);
+
+// Copyright 2024 The Stellar PHP SDK Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the LICENSE file.
+
+namespace Soneso\StellarSDK\SEP\TransferServerService;
+
+/**
+ * Represents a detailed breakdown component of a fee.
+ *
+ * Contains the name and amount for a specific fee component. Multiple instances
+ * can be used to provide a granular breakdown of total fees.
+ *
+ * @package Soneso\StellarSDK\SEP\TransferServerService
+ * @see https://github.com/stellar/stellar-protocol/blob/v4.3.0/ecosystem/sep-0006.md SEP-06 Specification
+ * @see FeeDetails
+ */
+class FeeDetailsDetails
+{
+    /**
+     * @param string $name The name of the fee, for example ACH fee, Brazilian conciliation fee, Service fee, etc.
+     * @param string $amount The amount of asset applied. If fee_details.details is provided,
+     * sum(fee_details.details.amount) should be equals fee_details.total.
+     * @param string|null $description A text describing the fee.
+     */
+    public function __construct(
+        public string $name,
+        public string $amount,
+        public ?string $description = null,
+    ) {
+    }
+
+
+    /**
+     * Constructs a new instance of FeeDetailsDetails by using the given data.
+     * @param array<array-key, mixed> $json the data to construct the object from.
+     * @return FeeDetailsDetails the object containing the parsed data.
+     */
+    public static function fromJson(array $json) : FeeDetailsDetails
+    {
+        $result = new FeeDetailsDetails($json['name'], $json['amount']);
+        if (isset($json['description'])) {
+            $result->description = $json['description'];
+        }
+        return $result;
+    }
+}

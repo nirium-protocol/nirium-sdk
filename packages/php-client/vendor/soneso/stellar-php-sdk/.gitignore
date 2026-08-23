@@ -1,0 +1,29 @@
+/vendor/
+.idea/
+.phpunit.result.cache
+.phpunit.cache/
+composer.lock
+composer.phar
+__pycache__/
+.DS_Store
+.claude/
+
+# XDR generator Ruby dependencies
+tools/xdr-generator/vendor/
+tools/xdr-generator/.bundle/
+
+# Matrix generator intermediate data
+tools/matrix-generator/rpc/data/
+tools/matrix-generator/rpc/rpc_methods.json
+
+# Test coverage
+/coverage/
+
+# Internal plans
+plans/
+
+# SEP-51 working files
+tools/sep-51-fixtures/orchestration-state.json
+tools/sep-51-fixtures/halt-report.md
+tools/sep-51-fixtures/deferred-nits.md
+tools/.venv-corpus-refresh/

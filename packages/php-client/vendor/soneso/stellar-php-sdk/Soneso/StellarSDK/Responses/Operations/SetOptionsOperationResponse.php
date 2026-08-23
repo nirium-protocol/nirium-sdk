@@ -1,0 +1,204 @@
+<?php declare(strict_types=1);
+
+// Copyright 2021 The Stellar PHP SDK Authors. All rights reserved.
+// Use of this source code is governed by a license that can be
+// found in the LICENSE file.
+
+namespace Soneso\StellarSDK\Responses\Operations;
+
+/**
+ * Represents a set options operation response from Horizon API
+ *
+ * This operation sets various account options including thresholds, signers, home domain,
+ * inflation destination, and account flags. Contains all modified account settings.
+ *
+ * @package Soneso\StellarSDK\Responses\Operations
+ * @see OperationResponse Base operation response
+ * @see https://developers.stellar.org Stellar developer docs Horizon Set Options
+ * @since 1.0.0
+ */
+class SetOptionsOperationResponse extends OperationResponse
+{
+    private ?int $lowThreshold = null;
+    private ?int $medThreshold = null;
+    private ?int $highThreshold = null;
+    private ?string $inflationDestination = null;
+    private ?string $homeDomain = null;
+    private ?string $signerKey = null;
+    private ?int $signerWeight = null;
+    private ?int $masterKeyWeight = null;
+    private ?array $setFlags = null; // [int]
+    private ?array $setFlagsS = null; // [string]
+    private ?array $clearFlags = null; // [int]
+    private ?array $clearFlagsS = null;
+
+    /**
+     * Gets the low threshold weight
+     *
+     * @return int|null The weight for low threshold or null if not set
+     */
+    public function getLowThreshold(): ?int
+    {
+        return $this->lowThreshold;
+    }
+
+    /**
+     * Gets the medium threshold weight
+     *
+     * @return int|null The weight for medium threshold or null if not set
+     */
+    public function getMedThreshold(): ?int
+    {
+        return $this->medThreshold;
+    }
+
+    /**
+     * Gets the high threshold weight
+     *
+     * @return int|null The weight for high threshold or null if not set
+     */
+    public function getHighThreshold(): ?int
+    {
+        return $this->highThreshold;
+    }
+
+    /**
+     * Gets the inflation destination account
+     *
+     * @return string|null The inflation destination account ID or null if not set
+     */
+    public function getInflationDestination(): ?string
+    {
+        return $this->inflationDestination;
+    }
+
+    /**
+     * Gets the home domain
+     *
+     * @return string|null The home domain string or null if not set
+     */
+    public function getHomeDomain(): ?string
+    {
+        return $this->homeDomain;
+    }
+
+    /**
+     * Gets the signer key being added or modified
+     *
+     * @return string|null The signer public key or null if not set
+     */
+    public function getSignerKey(): ?string
+    {
+        return $this->signerKey;
+    }
+
+    /**
+     * Gets the weight of the signer
+     *
+     * @return int|null The signer weight or null if not set
+     */
+    public function getSignerWeight(): ?int
+    {
+        return $this->signerWeight;
+    }
+
+    /**
+     * Gets the master key weight
+     *
+     * @return int|null The master key weight or null if not set
+     */
+    public function getMasterKeyWeight(): ?int
+    {
+        return $this->masterKeyWeight;
+    }
+
+    /**
+     * Gets the flags being set as integers
+     *
+     * @return array|null Array of flag integers or null
+     */
+    public function getSetFlags(): ?array
+    {
+        return $this->setFlags;
+    }
+
+    /**
+     * Gets the flags being set as strings
+     *
+     * @return array|null Array of flag name strings or null
+     */
+    public function getSetFlagsS(): ?array
+    {
+        return $this->setFlagsS;
+    }
+
+    /**
+     * Gets the flags being cleared as integers
+     *
+     * @return array|null Array of flag integers or null
+     */
+    public function getClearFlags(): ?array
+    {
+        return $this->clearFlags;
+    }
+
+    /**
+     * Gets the flags being cleared as strings
+     *
+     * @return array|null Array of flag name strings or null
+     */
+    public function getClearFlagsS(): ?array
+    {
+        return $this->clearFlagsS;
+    }
+
+    protected function loadFromJson(array $json) : void {
+
+        if (isset($json['low_threshold'])) $this->lowThreshold = $json['low_threshold'];
+        if (isset($json['med_threshold'])) $this->medThreshold = $json['med_threshold'];
+        if (isset($json['high_threshold'])) $this->highThreshold = $json['high_threshold'];
+
+        if (isset($json['inflation_dest'])) $this->inflationDestination = $json['inflation_dest'];
+        if (isset($json['home_domain'])) $this->homeDomain = $json['home_domain'];
+        if (isset($json['signer_key'])) $this->signerKey = $json['signer_key'];
+        if (isset($json['signer_weight'])) $this->signerWeight = $json['signer_weight'];
+        if (isset($json['master_key_weight'])) $this->masterKeyWeight = $json['master_key_weight'];
+
+
+        if (isset($json['set_flags'])) {
+            $this->setFlags = array();
+            foreach ($json['set_flags'] as $value) {
+                array_push($this->setFlags, $value);
+            }
+        }
+
+        if (isset($json['set_flags_s'])) {
+            $this->setFlagsS = array();
+            foreach ($json['set_flags_s'] as $value) {
+                array_push($this->setFlagsS, $value);
+            }
+        }
+
+        if (isset($json['clear_flags'])) {
+            $this->clearFlags = array();
+            foreach ($json['clear_flags'] as $value) {
+                array_push($this->clearFlags, $value);
+            }
+        }
+
+        if (isset($json['clear_flags_s'])) {
+            $this->clearFlagsS = array();
+            foreach ($json['clear_flags_s'] as $value) {
+                array_push($this->clearFlagsS, $value);
+            }
+        }
+
+        parent::loadFromJson($json);
+    }
+
+    public static function fromJson(array $jsonData) : SetOptionsOperationResponse {
+        $result = new SetOptionsOperationResponse();
+        $result->loadFromJson($jsonData);
+        return $result;
+    }
+}
