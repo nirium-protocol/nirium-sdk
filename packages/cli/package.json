@@ -8,7 +8,8 @@
     "nirium": "bin/nirium.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "node --experimental-strip-types --test test/doctor.test.js"
   },
   "keywords": [
     "stellar",
@@ -25,8 +26,8 @@
     "commander": "^11.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.30",
-    "typescript": "^5.0.0"
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
   },
   "files": [
     "bin",

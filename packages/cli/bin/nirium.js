@@ -64,6 +64,26 @@ program
         }
     });
 
+// --- COMMAND: doctor ---
+program
+    .command('doctor')
+    .description('CLI preflight diagnostics for x402/MPP misconfiguration')
+    .option('-n, --network <network>', 'Stellar network: testnet or pubnet', 'testnet')
+    .option('-c, --config <path>', 'Path to environment or config file')
+    .option('--json', 'Output results as JSON for CI integration')
+    .action(async (options) => {
+        const { runDoctorDiagnostics, formatDoctorOutput } = await import('../dist/doctor.js');
+        const report = await runDoctorDiagnostics(options);
+        if (options.json) {
+            console.log(JSON.stringify(report, null, 2));
+        } else {
+            console.log(formatDoctorOutput(report));
+        }
+        if (!report.ok) {
+            process.exit(1);
+        }
+    });
+
 // Un servidor que COBRA, no uno que escucha. Es el camino corto de
 // "instalé algo" a "me pagaron": levantas esto, le pegas con un cliente
 // x402 y el pago se liquida on-chain antes de que salga la respuesta.

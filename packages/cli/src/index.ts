@@ -79,6 +79,25 @@ program
         }
     });
 
+program
+    .command('doctor')
+    .description('CLI preflight diagnostics for x402/MPP misconfiguration')
+    .option('-n, --network <network>', 'Stellar network: testnet or pubnet', 'testnet')
+    .option('-c, --config <path>', 'Path to environment or config file')
+    .option('--json', 'Output results as JSON for CI integration')
+    .action(async (options: { network?: string; config?: string; json?: boolean }) => {
+        const { runDoctorDiagnostics, formatDoctorOutput } = await import('./doctor.js');
+        const report = await runDoctorDiagnostics(options);
+        if (options.json) {
+            console.log(JSON.stringify(report, null, 2));
+        } else {
+            console.log(formatDoctorOutput(report));
+        }
+        if (!report.ok) {
+            process.exit(1);
+        }
+    });
+
 function createTypeScriptProject(dir: string, name: string, options: { apiKey?: string; url: string }): void {
     // package.json
     const pkg = {
