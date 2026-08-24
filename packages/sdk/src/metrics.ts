@@ -6,21 +6,27 @@
  * The inner middleware runs unmodified — this layer only observes response
  * status and timing after the fact.
  *
- * Classification approach (matches @x402/core PaymentRequired schema):
- * - 402 without `error` field → challenge issued (fresh402 with accepts[])
- * - 402 with `error` field → verify failure (payment rejected)
+ * Classification approach (verified against @x402/core v2.23+ source):
+ *
+ * @x402/core's `createHTTPResponse` puts the full PaymentRequired object
+ * (including `error` and `accepts[]`) in the **PAYMENT-REQUIRED response
+ * header** as base64-encoded JSON. For non-browser API clients the JSON
+ * body is always `{}` unless `unpaidResponseBody` is configured.
+ *
+ * - 402 + PAYMENT-REQUIRED header → disambiguate via header's `error` field:
+ *   - `error === "Payment required"` → challenge issued (initial402)
+ *   - `error !== "Payment required"` → verify failure (payment rejected)
+ * - 402 + PAYMENT-RESPONSE header, no PAYMENT-REQUIRED → settlement failure
+ * - 403 → rejection from protected-request hook
  * - 2xx → verify + settle success
- * - 5xx → settle failure (facilitator error)
+ * - 5xx → facilitator/infrastructure error (separate from settle-fail)
+ *         Note: FacilitatorResponseError from both verify and settlement
+ *         paths surfaces as 502 via @x402/express's sendFacilitatorError.
  *
- * The402 status code is overloaded in the x402 protocol — it's used for
- * challenges, verify failures, AND settle failures. We disambiguate by
- * inspecting the `error` field in the response body: present = failure,
- * absent = fresh challenge.
- *
- * Monkeypatching is minimal: only `res.json` is intercepted (to capture
- *402 response bodies for classification and pricing). We do NOT patch
- * `res.send` or `res.end`, avoiding conflicts with @x402/express's own
- * internal buffering of `res.writeHead/write/end/flushHeaders`.
+ * Monkeypatching is minimal: only `res.json` (to capture403 bodies) and
+ * `res.setHeader` (to capture PAYMENT-REQUIRED/PAYMENT-RESPONSE headers)
+ * are intercepted. We do NOT patch `res.send` or `res.end`, avoiding
+ * conflicts with @x402/express's own internal buffering.
  *
  * @example
  * ```typescript
@@ -59,6 +65,8 @@ export interface MetricsSnapshot {
   verifyFail: Record<string, number>;
   settleSuccess: Record<string, number>;
   settleFail: Record<string, number>;
+  infraErrors: Record<string, number>;
+  rejections: Record<string, number>;
   revenue: Record<string, Record<string, number>>;
   settlementLatency: {
     buckets: Record<string, Record<string, number>>;
@@ -74,7 +82,8 @@ export interface X402MetricsOptions {
    * string like '$0.02' or an object with `price` and optional `asset`.
    *
    * If provided, revenue is tracked from this config (reliable).
-   * If omitted, revenue is extracted from 402 challenge accepts[] (best-effort).
+   * If omitted, revenue is extracted from402 challenge PAYMENT-REQUIRED
+   * header's accepts[] (best-effort).
    */
   routes?: Record<string, string | { price: string; asset?: string }>;
   /** Custom histogram bucket boundaries (seconds). Default: [0.1, 0.5, 1, 2.5, 5, 10] */
@@ -93,6 +102,8 @@ interface MetricsState {
   vFail: Record<string, number>;
   sSuccess: Record<string, number>;
   sFail: Record<string, number>;
+  infraErrors: Record<string, number>;
+  rejections: Record<string, number>;
   revenue: Record<string, Record<string, number>>;
   latency: Record<string, LatencyBucket>;
   /** Last-known price per route, for revenue tracking without routes config */
@@ -100,6 +111,20 @@ interface MetricsState {
   buckets: readonly number[];
   /** Pre-parsed route prices from options.routes */
   routePrices: Record<string, { amount: number; asset: string }>;
+}
+
+/**
+ * Decode the PAYMENT-REQUIRED response header value.
+ *
+ * @x402/core encodes the full PaymentRequired object as base64 JSON.
+ * Returns null if the header is missing or malformed.
+ */
+function decodePaymentRequiredHeader(headerValue: string): any | null {
+  try {
+    return JSON.parse(Buffer.from(headerValue, 'base64').toString('utf-8'));
+  } catch {
+    return null;
+  }
 }
 
 function parsePriceString(
@@ -160,7 +185,7 @@ function renderPrometheus(state: MetricsState): string {
 
   writeCounter(
     'x402_challenges_total',
-    'Total 402 payment challenges issued',
+    'Total402 payment challenges issued',
     state.challenges,
   );
   writeCounter(
@@ -182,6 +207,16 @@ function renderPrometheus(state: MetricsState): string {
     'x402_settle_fail_total',
     'Total failed settlements',
     state.sFail,
+  );
+  writeCounter(
+    'x402_infra_errors_total',
+    'Total facilitator/infrastructure errors (5xx)',
+    state.infraErrors,
+  );
+  writeCounter(
+    'x402_rejections_total',
+    'Total403 rejections from protected-request hooks',
+    state.rejections,
   );
 
   // Revenue — only emitted when there is data
@@ -230,9 +265,13 @@ function renderPrometheus(state: MetricsState): string {
 /**
  * Create an x402Metrics wrapper around an x402Serve handler.
  *
- * The wrapper patches only `res.json` (to capture402 response bodies for
- * classification and pricing). It does NOT patch `res.send` or `res.end`,
- * avoiding conflicts with @x402/express's own internal buffering.
+ * The wrapper patches two methods on `res`:
+ * - `res.json` — to capture403 response bodies for rejection counting
+ * - `res.setHeader` — to capture `PAYMENT-REQUIRED` and `PAYMENT-RESPONSE`
+ *   headers for402 classification (challenge vs. verify-fail vs. settle-fail)
+ *
+ * It does NOT patch `res.send` or `res.end`, avoiding conflicts with
+ * @x402/express's own internal buffering.
  *
  * Observations are made via `res.on('finish')`, which fires after the
  * response is fully sent — this is safe regardless of what the inner
@@ -251,6 +290,8 @@ export function x402Metrics(
     vFail: {},
     sSuccess: {},
     sFail: {},
+    infraErrors: {},
+    rejections: {},
     revenue: {},
     latency: {},
     lastPrice: {},
@@ -287,18 +328,42 @@ export function x402Metrics(
     const route = `${req.method} ${req.path || req.url || '/'}`;
     const start = performance.now();
 
-    // Intercept res.json to capture402 response bodies. This is the ONLY
-    // monkeypatch — we do NOT touch res.send or res.end, which @x402/express
-    // patches internally for response buffering.
+    // ── Capture response headers ──────────────────────────────
+    // @x402/core puts the full PaymentRequired object (error, accepts[])
+    // in the PAYMENT-REQUIRED header as base64 JSON. For API clients the
+    // JSON body is always `{}` unless unpaidResponseBody is configured,
+    // so the header is the only reliable classification signal.
+    let capturedPaymentRequiredHeader: string | null = null;
+    let capturedPaymentResponseHeader: string | null = null;
+
+    const originalSetHeader: ((name: string, value: string | string[]) => void) | undefined =
+      typeof res?.setHeader === 'function' ? res.setHeader.bind(res) : undefined;
+
+    if (originalSetHeader) {
+      res.setHeader = function interceptedSetHeader(
+        name: string,
+        value: string | string[],
+      ): any {
+        const lowerName = typeof name === 'string' ? name.toLowerCase() : '';
+        if (lowerName === 'payment-required') {
+          capturedPaymentRequiredHeader = Array.isArray(value) ? value[0] : value;
+        } else if (lowerName === 'payment-response') {
+          capturedPaymentResponseHeader = Array.isArray(value) ? value[0] : value;
+        }
+        return originalSetHeader(name, value);
+      };
+    }
+
+    // ── Capture403 response bodies ────────────────────────────
+    // 403 rejections carry { error: reason } in the JSON body.
     const originalJson: ((body: any) => any) | undefined =
       typeof res?.json === 'function' ? res.json.bind(res) : undefined;
-    let capturedBody: any = null;
+    let capturedJsonBody: any = null;
 
     if (originalJson) {
       res.json = function interceptedJson(body: any): any {
-        // Capture 402 bodies for classification and pricing
-        if (res.statusCode === 402 && body && !capturedBody) {
-          capturedBody = body;
+        if (body && !capturedJsonBody) {
+          capturedJsonBody = body;
         }
         return originalJson(body);
       };
@@ -306,37 +371,51 @@ export function x402Metrics(
 
     // Listen on 'finish' to capture the final status after the middleware
     // chain completes. The event fires after the response body is fully sent.
-    // This is safe regardless of @x402/express's internal buffering.
     res.on('finish', () => {
       const elapsed = (performance.now() - start) / 1000;
       const status = res.statusCode;
 
       if (status === 402) {
-        // Disambiguate402 responses using the @x402/core PaymentRequired schema:
-        // - No `error` field → challenge issued (fresh402 with accepts[])
-        // - `error` present → verify failure (payment was attempted and rejected)
-        const isChallenge = !capturedBody?.error;
+        // Decode the PAYMENT-REQUIRED header to classify the402.
+        const paymentRequired = capturedPaymentRequiredHeader
+          ? decodePaymentRequiredHeader(capturedPaymentRequiredHeader)
+          : null;
 
-        if (isChallenge) {
-          inc(state.challenges, route);
+        if (paymentRequired) {
+          // PAYMENT-REQUIRED header present → either challenge or verify-fail.
+          // The error field distinguishes them:
+          //   "Payment required" = initial challenge (no payment yet)
+          //   anything else     = verify failure (payment attempted, rejected)
+          const errorField = paymentRequired.error;
+          const isChallenge = errorField === 'Payment required';
 
-          // Extract pricing from accepts[] for revenue tracking.
-          // V2 schema uses `amount` (string); V1 uses `maxAmountRequired`.
-          if (capturedBody?.accepts?.length) {
-            const accept = capturedBody.accepts[0];
-            const raw = accept.amount || accept.maxAmountRequired;
-            const amt =
-              typeof raw === 'string' ? parseFloat(raw) : Number(raw);
-            if (!isNaN(amt) && amt > 0) {
-              state.lastPrice[route] = {
-                amount: amt,
-                asset: accept.asset || 'USDC',
-              };
+          if (isChallenge) {
+            inc(state.challenges, route);
+
+            // Extract pricing from accepts[] for revenue tracking.
+            // V2 schema uses `amount` (string); V1 uses `maxAmountRequired`.
+            const accepts = paymentRequired.accepts;
+            if (accepts?.length) {
+              const accept = accepts[0];
+              const raw = accept.amount || accept.maxAmountRequired;
+              const amt =
+                typeof raw === 'string' ? parseFloat(raw) : Number(raw);
+              if (!isNaN(amt) && amt > 0) {
+                state.lastPrice[route] = {
+                  amount: amt,
+                  asset: accept.asset || 'USDC',
+                };
+              }
             }
+          } else {
+            // 402 with PAYMENT-REQUIRED header but error ≠ "Payment required"
+            // → verify failure (payment was attempted and rejected)
+            inc(state.vFail, route);
           }
-        } else {
-          //402 with error = verify failure
-          inc(state.vFail, route);
+        } else if (capturedPaymentResponseHeader) {
+          // No PAYMENT-REQUIRED header but PAYMENT-RESPONSE present
+          // → settlement failure (402 from buildSettlementFailureResponse)
+          inc(state.sFail, route);
         }
       } else if (status >= 200 && status < 300) {
         inc(state.vSuccess, route);
@@ -344,7 +423,7 @@ export function x402Metrics(
         observeLatency(state, route, elapsed);
 
         // Count revenue on successful settlement. Prefer routes config
-        // (reliable), fall back to last-known price from 402 body (best-effort).
+        // (reliable), fall back to last-known price from402 header (best-effort).
         const priceSource =
           state.routePrices[route] || state.lastPrice[route];
         if (priceSource) {
@@ -353,8 +432,14 @@ export function x402Metrics(
           state.revenue[route][asset] =
             (state.revenue[route][asset] || 0) + amount;
         }
+      } else if (status === 403) {
+        // 403 rejection from a protected-request hook
+        inc(state.rejections, route);
       } else if (status >= 500) {
-        inc(state.sFail, route);
+        // 502 from FacilitatorResponseError (verify or settlement path)
+        // 500 from sendInternalError. These are infrastructure errors,
+        // not settlement failures — distinguish from402 settle-fail.
+        inc(state.infraErrors, route);
       }
     });
 
@@ -375,6 +460,8 @@ export function x402Metrics(
     verifyFail: { ...state.vFail },
     settleSuccess: { ...state.sSuccess },
     settleFail: { ...state.sFail },
+    infraErrors: { ...state.infraErrors },
+    rejections: { ...state.rejections },
     revenue: JSON.parse(JSON.stringify(state.revenue)),
     settlementLatency: {
       buckets: Object.fromEntries(
@@ -401,6 +488,8 @@ export function x402Metrics(
       state.vFail,
       state.sSuccess,
       state.sFail,
+      state.infraErrors,
+      state.rejections,
     ]) {
       for (const key of Object.keys(obj)) delete obj[key];
     }

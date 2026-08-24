@@ -145,15 +145,27 @@ curl -s http://localhost:3000/metrics
 Output:
 
 ```
-# HELP x402_challenges_total Total 402 payment challenges issued
+# HELP x402_challenges_total Total402 payment challenges issued
 # TYPE x402_challenges_total counter
 x402_challenges_total{route="GET /signals"} 12
 # HELP x402_verify_success_total Total successful payment verifications
 # TYPE x402_verify_success_total counter
 x402_verify_success_total{route="GET /signals"} 8
+# HELP x402_verify_fail_total Total failed payment verifications
+# TYPE x402_verify_fail_total counter
+x402_verify_fail_total{route="GET /signals"} 2
 # HELP x402_settle_success_total Total successful settlements
 # TYPE x402_settle_success_total counter
 x402_settle_success_total{route="GET /signals"} 8
+# HELP x402_settle_fail_total Total failed settlements
+# TYPE x402_settle_fail_total counter
+x402_settle_fail_total{route="GET /signals"} 1
+# HELP x402_infra_errors_total Total facilitator/infrastructure errors (5xx)
+# TYPE x402_infra_errors_total counter
+x402_infra_errors_total{route="GET /signals"} 1
+# HELP x402_rejections_total Total403 rejections from protected-request hooks
+# TYPE x402_rejections_total counter
+x402_rejections_total{route="GET /signals"} 1
 # HELP x402_revenue_total Revenue collected per route and asset
 # TYPE x402_revenue_total counter
 x402_revenue_total{route="GET /signals",asset="USDC"} 160000
