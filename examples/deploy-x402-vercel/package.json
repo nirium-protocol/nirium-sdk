@@ -14,8 +14,7 @@
     "next": "^15.1.0",
     "nirium": "^0.10.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "viem": "^2.55.19"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

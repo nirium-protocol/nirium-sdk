@@ -52,12 +52,16 @@ content-type: application/json
 }
 ```
 
-### 2. Request with x402 payment header (200 OK)
+### 2. Request with x402 payment (200 OK)
 
-Using Nirium CLI or TypeScript SDK to attach payment:
+Using Nirium CLI or TypeScript SDK to settle payment:
 
 ```bash
-curl -i -H "x-payment: <valid_payment_token>" https://<your-vercel-domain>.vercel.app/api/ascii?style=cat
+# Using Nirium CLI
+nirium pay https://<your-vercel-domain>.vercel.app/api/ascii?style=cat
+
+# Or attaching a valid PAYMENT-SIGNATURE header via x402 client
+curl -i -H "PAYMENT-SIGNATURE: <valid_payment_signature>" https://<your-vercel-domain>.vercel.app/api/ascii?style=cat
 ```
 
 **Response:**
