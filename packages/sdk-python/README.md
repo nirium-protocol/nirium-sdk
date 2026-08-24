@@ -37,16 +37,46 @@ async def main():
 asyncio.run(main())
 ```
 
-## Real-Time Signals (WebSocket)
+## Real-Time Signals (Resilient WebSocket)
+
+The Python SDK includes a hardened, self-healing WebSocket signals client with exponential backoff, randomized jitter, configurable retry caps, automatic deduplication, and typed status/error channels.
 
 ```python
+from nirium import Agent, WebSocketMaxRetriesExceeded, WebSocketStatus
+
 agent = Agent(api_url="https://nirium-agent.fly.dev", api_key="sk_inst_...", token="eyJhbG...")
 
+# 1. Listen for market signals
 @agent.on("signal")
 async def on_signal(data):
-    print(f"Signal: {data['signal_type']} — {data['data']['details']}")
+    print(f"Signal received: {data['signal_type']} — {data['data']['details']}")
 
-asyncio.run(agent.subscribe())
+# 2. Monitor connection status (connecting, connected, reconnecting, disconnected, closed)
+@agent.on("status")
+def on_status(status: str):
+    print(f"WS Status changed to: {status}")
+
+# 3. Handle connection & transport errors
+@agent.on("error")
+def on_error(err: dict):
+    print(f"WS Warning (attempt {err['attempt']}): {err['error']}")
+
+async def start_stream():
+    try:
+        # Connect with exponential backoff, jitter, and retry limits
+        await agent.subscribe(
+            max_retries=10,        # Max reconnect attempts (raises WebSocketMaxRetriesExceeded if reached)
+            initial_delay=1.0,     # Initial retry backoff in seconds
+            max_delay=30.0,        # Max backoff cap in seconds
+            backoff_factor=2.0,    # Exponential backoff multiplier
+            jitter=0.2,            # Random jitter factor (±20%)
+            dedupe_size=1000,      # Automatic deduplication buffer size
+        )
+    except WebSocketMaxRetriesExceeded as e:
+        print(f"Fatal connection failure: {e}")
+
+# Graceful shutdown when needed:
+# await agent.close()
 ```
 
 ## Authentication

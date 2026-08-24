@@ -5,8 +5,11 @@
 # Synced with backend API (real Horizon data, Soroban execution)
 # ═══════════════════════════════════════════════════════════════
 import asyncio
+import collections
+import hashlib
 import json
 import logging
+import random
 import aiohttp  # type: ignore
 import websockets  # type: ignore
 from typing import Callable, Dict, Any, List, Optional
@@ -22,6 +25,19 @@ import math as _math
 _X402_NULL_ACCOUNT = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
 
 logger = logging.getLogger("nirium.client")
+
+
+class WebSocketMaxRetriesExceeded(Exception):
+    """Raised when consecutive WebSocket reconnection retries exceed the configured limit."""
+    pass
+
+
+class WebSocketStatus:
+    CONNECTING = "connecting"
+    CONNECTED = "connected"
+    RECONNECTING = "reconnecting"
+    DISCONNECTED = "disconnected"
+    CLOSED = "closed"
 
 
 class Agent:
@@ -49,7 +65,17 @@ class Agent:
         elif token_local is not None:
             self.headers["Authorization"] = f"Bearer {token_local}"
 
-        self.callbacks: Dict[str, List[Callable]] = {"signal": [], "log": [], "connected": []}
+        self.callbacks: Dict[str, List[Callable]] = {
+            "signal": [],
+            "log": [],
+            "connected": [],
+            "status": [],
+            "error": [],
+        }
+        self._active_ws: Optional[Any] = None
+        self._ws_running: bool = False
+        self._ws_close_requested: bool = False
+        self._close_event: asyncio.Event = asyncio.Event()
 
     # ─── Decorators ────────────────────────────────────────────
 
@@ -489,13 +515,13 @@ class Agent:
         it settle, each verified against a TypeScript-generated reference:
 
         1. The source account is the NULL account, not the payer. The
-           facilitator replaces it with its own when it submits and pays the
-           fee. Using the payer's account makes the simulator emit
-           source-account credentials, which the facilitator cannot honour.
+            facilitator replaces it with its own when it submits and pays the
+            fee. Using the payer's account makes the simulator emit
+            source-account credentials, which the facilitator cannot honour.
         2. The auth entry must therefore carry ADDRESS credentials, signed with
-           an expiration ledger.
+            an expiration ledger.
         3. The transaction must be re-simulated AFTER signing: the signature
-           adds bytes, and the resource fee computed before it is too low.
+            adds bytes, and the resource fee computed before it is too low.
         """
         extra = accepted.get("extra") or {}
         if not extra.get("areFeesSponsored"):
@@ -675,25 +701,156 @@ class Agent:
 
     # ─── WebSocket ───────────────────────────────────────────
 
-    async def subscribe(self, callback: Optional[Callable] = None):
-        """Start real-time WebSocket connection for signals."""
+    async def close(self):
+        """
+        Gracefully close active WebSocket connection and stop subscriptions.
+        """
+        self._ws_close_requested = True
+        self._ws_running = False
+        self._close_event.set()
+        if self._active_ws is not None:
+            try:
+                await self._active_ws.close()
+            except Exception:
+                pass
+            self._active_ws = None
+        await self._emit("status", WebSocketStatus.CLOSED)
+
+    async def subscribe(
+        self,
+        callback: Optional[Callable] = None,
+        max_retries: Optional[int] = None,
+        initial_delay: float = 1.0,
+        max_delay: float = 30.0,
+        backoff_factor: float = 2.0,
+        jitter: float = 0.2,
+        dedupe_size: int = 1000,
+    ):
+        """
+        Start real-time WebSocket connection for signals with resilient exponential backoff,
+        jitter, retry capping, deduplication, and typed event channels.
+
+        Args:
+            callback: Optional callback for "signal" events (preserves legacy API).
+            max_retries: Maximum consecutive reconnection attempts before raising WebSocketMaxRetriesExceeded.
+            initial_delay: Initial reconnect delay in seconds (default: 1.0).
+            max_delay: Maximum reconnect delay in seconds (default: 30.0).
+            backoff_factor: Multiplier for exponential backoff (default: 2.0).
+            jitter: Fractional random jitter factor applied to delay (default: 0.2, i.e. +/- 20%).
+            dedupe_size: Number of recent message IDs to track for deduplication.
+        """
         if callback:
             self.callbacks.setdefault("signal", []).append(callback)
 
         auth_query = f"?token={self.token}" if self.token else ""
         url = f"{self.ws_url}{auth_query}"
 
-        while True:
+        self._ws_running = True
+        self._ws_close_requested = False
+        self._close_event.clear()
+        attempt = 0
+        seen_ids: collections.deque = collections.deque(maxlen=dedupe_size)
+        seen_set: set = set()
+
+        def _dedupe_check(msg_data: Dict[str, Any]) -> bool:
+            """Returns True if message is a new unseen signal, False if duplicate."""
+            msg_id = (
+                msg_data.get("id")
+                or msg_data.get("signal_id")
+                or msg_data.get("txHash")
+            )
+            if not msg_id:
+                raw_str = json.dumps(msg_data, sort_keys=True)
+                msg_id = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
+
+            if msg_id in seen_set:
+                return False
+
+            if len(seen_ids) >= dedupe_size and seen_ids:
+                oldest = seen_ids.popleft()
+                seen_set.discard(oldest)
+
+            seen_ids.append(msg_id)
+            seen_set.add(msg_id)
+            return True
+
+        while self._ws_running and not self._ws_close_requested:
             try:
+                await self._emit(
+                    "status",
+                    WebSocketStatus.CONNECTING if attempt == 0 else WebSocketStatus.RECONNECTING,
+                )
                 async with websockets.connect(url) as ws:
+                    self._active_ws = ws
                     logger.info("Connected to Nirium Signal Stream")
+                    await self._emit("status", WebSocketStatus.CONNECTED)
                     await self._emit("connected", None)
 
                     async for message in ws:
+                        if self._ws_close_requested:
+                            break
+                        # Reset retry counter upon successful message exchange
+                        attempt = 0
                         data = json.loads(message)
-                        event = data.get("type")
+                        event = data.get("type", "signal")
+
+                        # Deduplicate only signal messages
+                        if event == "signal":
+                            if not _dedupe_check(data):
+                                logger.debug(f"Dropped duplicate signal: {data.get('id')}")
+                                continue
+
                         if event in self.callbacks:
                             await self._emit(event, data)
+                        if (
+                            event != "signal"
+                            and len(self.callbacks.get("signal", [])) > 0
+                            and event not in ("connected", "status", "error", "log")
+                        ):
+                            await self._emit("signal", data)
+
+                    if not self._ws_close_requested:
+                        raise ConnectionResetError("WebSocket connection closed by remote server")
+
             except Exception as e:
-                logger.error(f"WS Disconnected: {e}. Reconnecting in 5s...")
-                await asyncio.sleep(5)
+                self._active_ws = None
+                if self._ws_close_requested:
+                    logger.info("WebSocket connection closed by user request.")
+                    await self._emit("status", WebSocketStatus.CLOSED)
+                    break
+
+                attempt += 1
+                await self._emit("status", WebSocketStatus.DISCONNECTED)
+                await self._emit(
+                    "error",
+                    {"error": str(e), "exception": e, "attempt": attempt},
+                )
+
+                if max_retries is not None and attempt >= max_retries:
+                    logger.error(
+                        f"WS Reconnect failed after {attempt} attempts. Max retries exceeded."
+                    )
+                    await self._emit("status", WebSocketStatus.CLOSED)
+                    raise WebSocketMaxRetriesExceeded(
+                        f"WebSocket connection failed after {attempt} consecutive attempts: {e}"
+                    ) from e
+
+                # Calculate exponential backoff with jitter
+                base_delay = min(
+                    max_delay, initial_delay * (backoff_factor ** (attempt - 1))
+                )
+                jitter_range = base_delay * jitter
+                actual_delay = max(
+                    0.05, base_delay + random.uniform(-jitter_range, jitter_range)
+                )
+
+                logger.warning(
+                    f"WS Disconnected: {e}. Reconnecting (attempt {attempt}/{max_retries or 'inf'}) in {actual_delay:.2f}s..."
+                )
+                try:
+                    await asyncio.wait_for(self._close_event.wait(), timeout=actual_delay)
+                    # If close event was triggered during backoff sleep, terminate immediately
+                    break
+                except asyncio.TimeoutError:
+                    # Backoff sleep elapsed normally, proceed to reconnect
+                    pass
