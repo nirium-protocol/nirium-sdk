@@ -2,13 +2,19 @@
 
 from typing import TYPE_CHECKING
 
-from .client import Agent  # type: ignore
+from .client import Agent, WebSocketMaxRetriesExceeded, WebSocketStatus  # type: ignore
 
 if TYPE_CHECKING:
     from .langchain_tools import NiriumX402Tool, create_nirium_x402_tool
 
 __version__ = "0.9.0"
-__all__ = ["Agent", "NiriumX402Tool", "create_nirium_x402_tool"]
+__all__ = [
+    "Agent",
+    "WebSocketMaxRetriesExceeded",
+    "WebSocketStatus",
+    "NiriumX402Tool",
+    "create_nirium_x402_tool",
+]
 
 
 def __getattr__(name: str):

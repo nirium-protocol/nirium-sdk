@@ -12,7 +12,7 @@ setup(
     ],
     extras_require={
         "langchain": ["langchain-core>=0.3.0"],
-        "dev": [
+        "test": [
             "pytest>=8.0.0",
             "pytest-asyncio>=0.23.0",
             "langchain-core>=0.3.0",
