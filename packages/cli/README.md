@@ -54,6 +54,30 @@ signals. Defaults to `https://nirium-agent.fly.dev` (testnet); set
 nirium status
 ```
 
+## Verify IPFS Audit CID (`nirium verify`)
+
+Independently verify an audit document CID anchored on IPFS without trusting any Nirium backend servers or external verification API.
+
+The verifier recomputes the SHA-256 hash of the embedded record and independently verifies the Ed25519 signature over `nirium-audit-v1:<content_sha256>` using the signer's Stellar public key (`G...`).
+
+```bash
+nirium verify <cid> [--gateway https://gateway.pinata.cloud] [--json]
+```
+
+### Example Verification Output
+
+```text
+🔍 Nirium Audit Verifier
+CID:            QmSSZdtt3dQ8BqUm62zrKQ85E4BUHYiVfvDgZmHfJsqU1U
+--------------------------------------------------
+✔ HASH:        MATCH (ab44f8883af819f7...)
+✔ SIGNATURE:   VALID (Signed by GD5AFNPTKVZPNWZWKLOULOE7BN4E7ZC73WV5YMBCULYQXWFCGDESUNOZ)
+   Statement:  nirium-audit-v1:ab44f8883af819f7496f2cef29eaea0651f6d97af78aa8088fd8ef4dc4b753c9
+   Agent ID:   arcusx-dispute-resolver
+--------------------------------------------------
+✅ VERIFICATION PASSED
+```
+
 ## Options
 
 | Option | Values | Default |
