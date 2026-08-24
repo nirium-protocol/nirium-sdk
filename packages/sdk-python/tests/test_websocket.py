@@ -195,3 +195,110 @@ async def test_legacy_subscribe_callback():
 
         assert len(legacy_signals) == 1
         assert legacy_signals[0]["id"] == "sig-legacy"
+
+
+@pytest.mark.asyncio
+async def test_websocket_flapping_connection_triggers_max_retries():
+    """Test that immediate connect-and-drop flapping without messages properly increments retry counter and raises."""
+    connection_attempts = 0
+
+    async def flapping_handler(websocket):
+        nonlocal connection_attempts
+        connection_attempts += 1
+        # Accept connection and immediately drop before sending any message
+        await websocket.close(1000, "Normal closure / dead backend drop")
+
+    async with websockets.serve(flapping_handler, "127.0.0.1", 18769):
+        agent = Agent(api_url="http://127.0.0.1:18769")
+        agent.ws_url = "ws://127.0.0.1:18769"
+
+        errors = []
+
+        @agent.on("error")
+        def on_err(e):
+            errors.append(e)
+
+        with pytest.raises(WebSocketMaxRetriesExceeded):
+            await agent.subscribe(
+                max_retries=3,
+                initial_delay=0.01,
+                max_delay=0.05,
+                backoff_factor=1.5,
+            )
+
+        assert connection_attempts == 3
+        assert len(errors) == 3
+        assert errors[-1]["attempt"] == 3
+
+
+@pytest.mark.asyncio
+async def test_websocket_close_cancels_inflight_backoff_sleep():
+    """Test that close() promptly cancels an in-flight backoff sleep rather than blocking for max_delay."""
+    async def immediate_drop_handler(websocket):
+        await websocket.close(1001, "Instant drop")
+
+    async with websockets.serve(immediate_drop_handler, "127.0.0.1", 18771):
+        agent = Agent(api_url="http://127.0.0.1:18771")
+        agent.ws_url = "ws://127.0.0.1:18771"
+
+        statuses = []
+
+        @agent.on("status")
+        def on_st(st):
+            statuses.append(st)
+
+        # Initial delay 30s (would hang if not cancelled)
+        sub_task = asyncio.create_task(
+            agent.subscribe(initial_delay=30.0, max_delay=30.0, max_retries=5)
+        )
+
+        # Wait for the first connection attempt to drop and enter backoff sleep
+        await asyncio.sleep(0.1)
+        assert WebSocketStatus.DISCONNECTED in statuses
+
+        t0 = asyncio.get_event_loop().time()
+        await agent.close()
+        await asyncio.wait_for(sub_task, timeout=1.0)
+        elapsed = asyncio.get_event_loop().time() - t0
+
+        # Must finish in <0.5s instead of hanging for 30s
+        assert elapsed < 0.5
+        assert WebSocketStatus.CLOSED in statuses
+        assert sub_task.done()
+
+
+@pytest.mark.asyncio
+async def test_websocket_non_signal_deduplication_isolation():
+    """Test that non-signal events with identical IDs/payloads are not dropped by the signal dedup filter."""
+    log_messages = [
+        {"type": "log", "id": "log-entry-1", "message": "heartbeat ping"},
+        {"type": "log", "id": "log-entry-1", "message": "heartbeat ping"},
+        {"type": "log", "id": "log-entry-1", "message": "heartbeat ping"},
+    ]
+
+    async def mock_handler(websocket):
+        for msg in log_messages:
+            await websocket.send(json.dumps(msg))
+        await asyncio.sleep(0.1)
+
+    async with websockets.serve(mock_handler, "127.0.0.1", 18770):
+        agent = Agent(api_url="http://127.0.0.1:18770")
+        agent.ws_url = "ws://127.0.0.1:18770"
+
+        received_logs = []
+
+        @agent.on("log")
+        def on_log(log_item):
+            received_logs.append(log_item)
+
+        sub_task = asyncio.create_task(agent.subscribe())
+        await asyncio.sleep(0.15)
+        await agent.close()
+        try:
+            await asyncio.wait_for(sub_task, timeout=0.5)
+        except asyncio.TimeoutError:
+            sub_task.cancel()
+
+        # All 3 non-signal messages should be received
+        assert len(received_logs) == 3
+

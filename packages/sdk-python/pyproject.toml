@@ -17,6 +17,12 @@ dependencies = [
     "stellar-sdk>=11.0.0",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
 [project.urls]
 Homepage = "https://nirium.xyz"
 Repository = "https://github.com/nirium-protocol/nirium-sdk"

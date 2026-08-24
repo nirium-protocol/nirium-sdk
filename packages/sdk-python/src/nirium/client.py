@@ -75,6 +75,7 @@ class Agent:
         self._active_ws: Optional[Any] = None
         self._ws_running: bool = False
         self._ws_close_requested: bool = False
+        self._close_event: asyncio.Event = asyncio.Event()
 
     # ─── Decorators ────────────────────────────────────────────
 
@@ -514,13 +515,13 @@ class Agent:
         it settle, each verified against a TypeScript-generated reference:
 
         1. The source account is the NULL account, not the payer. The
-           facilitator replaces it with its own when it submits and pays the
-           fee. Using the payer's account makes the simulator emit
-           source-account credentials, which the facilitator cannot honour.
+            facilitator replaces it with its own when it submits and pays the
+            fee. Using the payer's account makes the simulator emit
+            source-account credentials, which the facilitator cannot honour.
         2. The auth entry must therefore carry ADDRESS credentials, signed with
-           an expiration ledger.
+            an expiration ledger.
         3. The transaction must be re-simulated AFTER signing: the signature
-           adds bytes, and the resource fee computed before it is too low.
+            adds bytes, and the resource fee computed before it is too low.
         """
         extra = accepted.get("extra") or {}
         if not extra.get("areFeesSponsored"):
@@ -706,6 +707,7 @@ class Agent:
         """
         self._ws_close_requested = True
         self._ws_running = False
+        self._close_event.set()
         if self._active_ws is not None:
             try:
                 await self._active_ws.close()
@@ -745,6 +747,7 @@ class Agent:
 
         self._ws_running = True
         self._ws_close_requested = False
+        self._close_event.clear()
         attempt = 0
         seen_ids: collections.deque = collections.deque(maxlen=dedupe_size)
         seen_set: set = set()
@@ -779,7 +782,6 @@ class Agent:
                 )
                 async with websockets.connect(url) as ws:
                     self._active_ws = ws
-                    attempt = 0  # Reset retry counter on successful connection
                     logger.info("Connected to Nirium Signal Stream")
                     await self._emit("status", WebSocketStatus.CONNECTED)
                     await self._emit("connected", None)
@@ -787,11 +789,13 @@ class Agent:
                     async for message in ws:
                         if self._ws_close_requested:
                             break
+                        # Reset retry counter upon successful message exchange
+                        attempt = 0
                         data = json.loads(message)
                         event = data.get("type", "signal")
 
-                        # Deduplicate signal messages
-                        if event == "signal" or "signal" in self.callbacks:
+                        # Deduplicate only signal messages
+                        if event == "signal":
                             if not _dedupe_check(data):
                                 logger.debug(f"Dropped duplicate signal: {data.get('id')}")
                                 continue
@@ -800,7 +804,7 @@ class Agent:
                             await self._emit(event, data)
                         if (
                             event != "signal"
-                            and "signal" in self.callbacks
+                            and len(self.callbacks.get("signal", [])) > 0
                             and event not in ("connected", "status", "error", "log")
                         ):
                             await self._emit("signal", data)
@@ -843,4 +847,10 @@ class Agent:
                 logger.warning(
                     f"WS Disconnected: {e}. Reconnecting (attempt {attempt}/{max_retries or 'inf'}) in {actual_delay:.2f}s..."
                 )
-                await asyncio.sleep(actual_delay)
+                try:
+                    await asyncio.wait_for(self._close_event.wait(), timeout=actual_delay)
+                    # If close event was triggered during backoff sleep, terminate immediately
+                    break
+                except asyncio.TimeoutError:
+                    # Backoff sleep elapsed normally, proceed to reconnect
+                    pass
