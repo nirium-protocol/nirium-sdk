@@ -3,9 +3,12 @@ dist/
 build/
 *.tsbuildinfo
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.egg-info/
 .env
 .env.*
+!.env.example
+!.env.example
 .DS_Store

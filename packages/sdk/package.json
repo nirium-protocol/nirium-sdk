@@ -26,7 +26,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "lint": "eslint src/",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests && node --experimental-strip-types --test test/*.test.ts"
   },
   "dependencies": {
     "@stellar/mpp": "^0.7.1",
@@ -34,11 +34,15 @@
     "@x402/fetch": "^2.17.0",
     "@x402/stellar": "^2.17.0",
     "mppx": "^0.6.31",
-    "viem": "^2.55.19",
     "ws": "^8.21.3"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.2.0",
     "@types/ws": "^8.18.1",
+    "@x402/core": "^2.23.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.12",
     "typescript": "^5.9.3"
   },
   "keywords": [

@@ -10,6 +10,14 @@ setup(
         "aiohttp>=3.9.0",
         "stellar-sdk>=11.0.0",
     ],
+    extras_require={
+        "langchain": ["langchain-core>=0.3.0"],
+        "test": [
+            "pytest>=8.0.0",
+            "pytest-asyncio>=0.23.0",
+            "langchain-core>=0.3.0",
+        ],
+    },
     author="Nirium Team",
     description="Official Python SDK for Nirium autonomous agents on Stellar (x402 + MPP)",
     keywords=["nirium", "stellar", "defi", "x402", "mpp", "agentic-payments", "soroban"],
