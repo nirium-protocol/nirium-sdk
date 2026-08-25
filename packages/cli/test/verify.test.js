@@ -70,3 +70,46 @@ test('offline verify: handles audit document without agent signature block', () 
   assert.equal(result.hashMatch, true);
   assert.equal(result.signatureStatus, 'absent');
 });
+
+// Regression: statement-substitution bypass (the attack fixed in this commit).
+// Scenario: attacker takes a legitimately-signed document, swaps the record
+// for malicious content, updates content_sha256 to the new correct hash so
+// hashMatch still passes, but leaves agent.statement pointing at the OLD hash.
+// Before the fix, the verifier would verify the signature against the old
+// (document-declared) statement and incorrectly report VALID.
+import crypto from 'node:crypto';
+
+test('offline verify: rejects statement-substitution attack (record swapped, old statement reused)', () => {
+  const attacked = JSON.parse(JSON.stringify(VALID_FIXTURE));
+
+  // Swap record with entirely different content
+  attacked.record = {
+    schema: 'arcusx.dispute.resolution.v1',
+    dispute: 'dispute-999',
+    outcome: 'MALICIOUS_CONTENT',
+    note: 'This record was NOT attested by the agent.',
+  };
+
+  // Update content_sha256 to the genuine hash of the new record,
+  // so the hash-match check passes on its own.
+  const newHash = crypto.createHash('sha256')
+    .update(JSON.stringify(attacked.record))
+    .digest('hex');
+  attacked.content_sha256 = newHash;
+
+  // Leave agent.statement pointing at the ORIGINAL hash —
+  // the signature is valid for THAT statement, not for the new hash.
+  // (agent.statement is still nirium-audit-v1:<originalHash>)
+
+  const result = verifyAuditDocument(attacked, 'QmFAKE');
+
+  // Hash matches because we updated content_sha256 honestly
+  assert.equal(result.hashMatch, true);
+  // But signature must be INVALID — the verifier now reconstructs
+  // `nirium-audit-v1:<newHash>` instead of trusting the old statement
+  assert.equal(result.signatureStatus, 'invalid');
+  // Overall: must fail
+  assert.equal(result.ok, false);
+  // Verify that declaredStatement differs from the recomputed statement
+  assert.notEqual(result.declaredStatement, result.statement);
+});

@@ -27,6 +27,7 @@ export interface VerifyResult {
   signatureStatus: 'valid' | 'invalid' | 'absent';
   signerKey?: string;
   statement?: string;
+  declaredStatement?: string;
   agentId?: string;
   error?: string;
 }
@@ -78,12 +79,19 @@ export function verifyAuditDocument(doc: AuditDocument, cid?: string): VerifyRes
   let signatureStatus: 'valid' | 'invalid' | 'absent' = 'absent';
   let signerKey: string | undefined;
   let statement: string | undefined;
+  let declaredStatement: string | undefined;
   let agentId: string | undefined;
 
   if (doc.agent && doc.agent.key && doc.agent.signature) {
     signerKey = doc.agent.key;
     agentId = doc.agent.id;
-    statement = doc.agent.statement || `nirium-audit-v1:${computedHash}`;
+    // Always recompute — never trust the document's own statement field.
+    // The protocol signs `nirium-audit-v1:<content_sha256>`, derived
+    // exclusively from the record hash.  Trusting doc.agent.statement
+    // would let an attacker reuse a valid signature after swapping the
+    // record content.
+    statement = `nirium-audit-v1:${computedHash}`;
+    declaredStatement = doc.agent.statement;
 
     const isValidSig = verifyEd25519Signature(signerKey, statement, doc.agent.signature);
     signatureStatus = isValidSig ? 'valid' : 'invalid';
@@ -100,6 +108,7 @@ export function verifyAuditDocument(doc: AuditDocument, cid?: string): VerifyRes
     signatureStatus,
     signerKey,
     statement,
+    declaredStatement,
     agentId,
   };
 }
