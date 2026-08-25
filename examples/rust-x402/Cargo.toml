@@ -1,0 +1,28 @@
+[package]
+name = "rust-x402"
+version = "0.1.0"
+edition = "2018"
+description = "x402 v2 Stellar/Soroban payment client — end-to-end testnet example"
+
+[[bin]]
+name = "rust-x402"
+path = "src/main.rs"
+
+[dependencies]
+stellar-xdr = { version = "24.0.0", features = ["std", "serde", "base64"] }
+stellar-strkey = "0.0.18"
+reqwest = { version = "0.12", features = ["rustls-tls", "json"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+sha2 = "0.10"
+hex = "0.4"
+hmac = "0.12"
+thiserror = "2"
+zeroize = { version = "1", features = ["derive"] }
+async-trait = "0.1"
+url = "2"
+
+[dev-dependencies]
+wiremock = "0.6"

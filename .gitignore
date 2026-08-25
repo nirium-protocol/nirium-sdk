@@ -9,3 +9,4 @@ __pycache__/
 .env
 .env.*
 .DS_Store
+examples/rust-x402/target/
