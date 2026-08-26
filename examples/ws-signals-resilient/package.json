@@ -1,0 +1,19 @@
+{
+  "name": "example-ws-signals-resilient",
+  "version": "1.0.0",
+  "description": "Resilient WebSocket signals stream example with exponential backoff & auto-reconnect",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types index.ts",
+    "test": "node --experimental-strip-types --test test/smoke.test.js"
+  },
+  "dependencies": {
+    "nirium": "file:../../packages/sdk",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.30",
+    "typescript": "^5.7.0"
+  }
+}

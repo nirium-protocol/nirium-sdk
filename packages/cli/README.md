@@ -78,6 +78,56 @@ CID:            QmSSZdtt3dQ8BqUm62zrKQ85E4BUHYiVfvDgZmHfJsqU1U
 ✅ VERIFICATION PASSED
 ```
 
+## Preflight Diagnostics (`nirium doctor`)
+
+Inspect your environment and configuration for x402/MPP misconfigurations before running your agent or paid API server.
+
+```bash
+nirium doctor [--network testnet|pubnet] [--config .env] [--json]
+```
+
+### Example Human-Readable Output
+
+```text
+🩺 Nirium Doctor — x402/MPP Diagnostic Report
+Target Network: stellar:testnet
+Timestamp:      2026-08-24T00:10:00.000Z
+--------------------------------------------------
+✔ [PAYTO] payTo address is a valid Stellar public key (GBRP...CCHX)
+❌ [FACILITATOR] facilitatorApiKey is missing — OpenZeppelin Channels facilitator rejects unauthenticated requests
+   💡 Fix: Get a free testnet key at https://channels.openzeppelin.com/testnet/gen and set X402_FACILITATOR_API_KEY in .env
+✔ [NETWORK] Soroban RPC endpoint operational for stellar:testnet
+--------------------------------------------------
+❌ Diagnostic failed. See fix suggestions above.
+```
+
+### Example JSON Output (`--json`)
+
+```json
+{
+  "ok": true,
+  "network": "stellar:testnet",
+  "checks": [
+    {
+      "name": "payTo",
+      "status": "pass",
+      "message": "payTo address is a valid Stellar public key (GBRP...CCHX)"
+    },
+    {
+      "name": "facilitator",
+      "status": "pass",
+      "message": "Facilitator reachable and API key authenticated on testnet"
+    },
+    {
+      "name": "network",
+      "status": "pass",
+      "message": "Soroban RPC endpoint operational for stellar:testnet"
+    }
+  ],
+  "timestamp": "2026-08-24T00:10:00.000Z"
+}
+```
+
 ## Options
 
 | Option | Values | Default |

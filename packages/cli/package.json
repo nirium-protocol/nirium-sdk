@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --experimental-strip-types --test test/verify.test.js"
+    "test": "node --experimental-strip-types --test test/verify.test.js test/doctor.test.js"
   },
   "keywords": [
     "stellar",
@@ -22,13 +22,13 @@
   "author": "Nirium Team",
   "license": "Apache-2.0",
   "dependencies": {
-    "@stellar/stellar-sdk": "^17.0.0",
+    "@stellar/stellar-sdk": "^14.5.0",
     "axios": "^1.13.6",
     "commander": "^11.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.30",
-    "typescript": "^5.0.0"
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
   },
   "files": [
     "bin",

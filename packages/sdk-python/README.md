@@ -8,6 +8,8 @@ Nirium agents rebalance USDC ↔ CETES (tokenized Mexican T-bills via Etherfuse)
 
 ```bash
 pip install nirium
+# Optional LangChain adapter
+pip install 'nirium[langchain]'
 ```
 
 ## Quick Start
@@ -37,16 +39,46 @@ async def main():
 asyncio.run(main())
 ```
 
-## Real-Time Signals (WebSocket)
+## Real-Time Signals (Resilient WebSocket)
+
+The Python SDK includes a hardened, self-healing WebSocket signals client with exponential backoff, randomized jitter, configurable retry caps, automatic deduplication, and typed status/error channels.
 
 ```python
+from nirium import Agent, WebSocketMaxRetriesExceeded, WebSocketStatus
+
 agent = Agent(api_url="https://nirium-agent.fly.dev", api_key="sk_inst_...", token="eyJhbG...")
 
+# 1. Listen for market signals
 @agent.on("signal")
 async def on_signal(data):
-    print(f"Signal: {data['signal_type']} — {data['data']['details']}")
+    print(f"Signal received: {data['signal_type']} — {data['data']['details']}")
 
-asyncio.run(agent.subscribe())
+# 2. Monitor connection status (connecting, connected, reconnecting, disconnected, closed)
+@agent.on("status")
+def on_status(status: str):
+    print(f"WS Status changed to: {status}")
+
+# 3. Handle connection & transport errors
+@agent.on("error")
+def on_error(err: dict):
+    print(f"WS Warning (attempt {err['attempt']}): {err['error']}")
+
+async def start_stream():
+    try:
+        # Connect with exponential backoff, jitter, and retry limits
+        await agent.subscribe(
+            max_retries=10,        # Max reconnect attempts (raises WebSocketMaxRetriesExceeded if reached)
+            initial_delay=1.0,     # Initial retry backoff in seconds
+            max_delay=30.0,        # Max backoff cap in seconds
+            backoff_factor=2.0,    # Exponential backoff multiplier
+            jitter=0.2,            # Random jitter factor (±20%)
+            dedupe_size=1000,      # Automatic deduplication buffer size
+        )
+    except WebSocketMaxRetriesExceeded as e:
+        print(f"Fatal connection failure: {e}")
+
+# Graceful shutdown when needed:
+# await agent.close()
 ```
 
 ## Authentication
@@ -70,6 +102,33 @@ agent.init_x402(
 
 response = await agent.x402_fetch("https://nirium-agent.fly.dev/api/v1/premium/signals")
 ```
+
+### LangChain tool — pay x402 from any agent
+
+`NiriumX402Tool` is a LangChain `BaseTool` that wraps the same `init_x402` / `x402_fetch` client. A ReAct-style agent can pay a protected Stellar endpoint as a normal tool call. The Stellar secret is constructor/env configuration only: it never appears in the tool description, args schema, error text, or return value.
+
+```python
+import os
+from langchain.agents import create_agent
+from nirium import NiriumX402Tool
+
+tool = NiriumX402Tool(
+    secret_key=os.environ["STELLAR_SECRET_KEY"],  # or set the env var and omit this
+    network="stellar:testnet",
+)
+
+agent = create_agent(model="gpt-4o-mini", tools=[tool])
+result = agent.invoke({
+    "messages": [{
+        "role": "user",
+        "content": "Fetch https://nirium-agent.fly.dev/api/v1/premium/signals",
+    }]
+})
+```
+
+Environment variables: `STELLAR_SECRET_KEY` (or `STELLAR_TESTNET_SECRET_KEY`), optional `NIRIUM_X402_NETWORK` (default `stellar:testnet`).
+
+Runnable example: [`examples/langchain-x402-agent`](../../examples/langchain-x402-agent).
 
 ### MPP — Session-Based Budget Delegation
 ```python
@@ -144,6 +203,7 @@ Anchor a **hash** rather than the data itself: IPFS content cannot be deleted, s
 | Admin | `configure_llm()` |
 | WebSocket | `subscribe()`, `on()` decorator |
 | x402 Payments | `init_x402()`, `x402_fetch()` |
+| LangChain | `NiriumX402Tool`, `create_nirium_x402_tool()` |
 | MPP Payments | `init_mpp()`, `mpp_fetch()` |
 
 ## Requirements
@@ -151,6 +211,7 @@ Anchor a **hash** rather than the data itself: IPFS content cannot be deleted, s
 - Python >= 3.10
 - aiohttp >= 3.9.0
 - websockets >= 13.0
+- langchain-core >= 0.3.0 (only for `nirium[langchain]`)
 
 ## Links
 
