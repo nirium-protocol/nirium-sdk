@@ -50,7 +50,7 @@ app.use('/premium', x402Serve({
 
 Any AI agent can now pay for your endpoint in USDC: no account, no card, no subscription, no human awake.
 
-See [`docs/`](./docs) for full quickstarts, including [**"Charge AI agents in 5 minutes"**](./docs/quickstart-x402.md), and [`examples/`](./examples) for runnable Express, Next.js, and [LangChain x402](./examples/langchain-x402-agent) integrations. For real production findings (not marketing copy), see the [**devlog**](./docs/devlog.md).
+See [`docs/`](./docs) for full quickstarts, including [**"Charge AI agents in 5 minutes"**](./docs/quickstart-x402.md), and [`examples/`](./examples) for runnable Express, Next.js, [LangChain x402](./examples/langchain-x402-agent), and [non-custodial treasury vault](./examples/treasury-vault-quickstart) integrations. For real production findings (not marketing copy), see the [**devlog**](./docs/devlog.md).
 
 ## Networks
 
