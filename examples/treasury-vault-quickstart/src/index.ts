@@ -87,7 +87,7 @@ async function main(): Promise<void> {
     const depositAmount = process.env.DEPOSIT_AMOUNT_STROOPS?.trim() || '10000000';
     const invest = (process.env.INVEST ?? 'false').toLowerCase() === 'true';
     const name = process.env.VAULT_NAME?.trim() || `Quickstart ${caller.slice(-4)}`;
-    const symbol = (process.env.VAULT_SYMBOL?.trim() || `QS${caller.slice(-3)}`).slice(0, 12);
+    const symbol = (process.env.VAULT_SYMBOL?.trim() || `QS${caller.slice(-3)}`).slice(0, 10);
 
     console.log(`  vault asset:     ${label} ${asset}`);
     console.log(`  strategy:        ${strategy}`);

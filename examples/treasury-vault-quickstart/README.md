@@ -71,6 +71,7 @@ src/index.ts   end-to-end loop (deploy → sign → submit → deposit → sign 
 src/sign.ts    local keypair signing; testnet passphrase guard
 src/auth.ts    demo-auth + optional Bearer header
 src/errors.ts  insufficient-balance / passphrase error mapping
+src/usdc.ts    BlendUSDC trustline + balance preflight (not Circle USDC)
 ```
 
 SDK methods used: `Agent.deployTreasuryVault`, `Agent.depositToTreasuryVault`, `Agent.submitTreasuryTx`, `Agent.getTreasuryVault`, `Agent.getTreasuryInfo` (`nirium@0.12.0`).
