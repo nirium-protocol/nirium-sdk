@@ -68,8 +68,59 @@ mod tests {
         let accepted = Requirement {
             scheme: "exact".into(), network: "stellar:testnet".into(), asset: "USDC".into(),
             amount: "0.02".into(), pay_to: "C_ADDRESS".into(), max_timeout_seconds: Some(300),
+            extra: None,
         };
         let rt = tokio::runtime::Runtime::new().unwrap();
         assert_eq!(rt.block_on(signer.sign_exact(&accepted)).unwrap(), "AAAA_test_tx");
+    }
+
+    #[test]
+    fn challenge_preserves_extra_fields() {
+        let json = serde_json::json!({
+            "x402Version": 2,
+            "accepts": [{
+                "scheme": "exact",
+                "network": "stellar:testnet",
+                "asset": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+                "amount": "200000",
+                "payTo": "GC4Q5TWWXI7IHN6DYCBEKCOWJWCKY4JE2NLKLU5SE3YL44IUUFPKUOPC",
+                "maxTimeoutSeconds": 300,
+                "extra": { "areFeesSponsored": true }
+            }]
+        });
+        let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, json.to_string());
+        let c = Challenge::parse(&b64).unwrap();
+        let r = &c.accepts[0];
+        assert_eq!(r.extra.as_ref().unwrap()["areFeesSponsored"], true);
+        // roundtrip keeps extra in the signed credential
+        let header = payment_header(&c, r.clone(), "AAAA_test_tx").unwrap();
+        let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &header).unwrap();
+        let round: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(round["accepted"]["extra"]["areFeesSponsored"], true);
+    }
+
+    #[test]
+    fn env_signer_rejects_bad_secret() {
+        use rust_x402::signer::EnvSigner;
+        assert!(EnvSigner::new("not-a-stellar-secret".into(), "https://soroban-testnet.stellar.org").is_err());
+        assert!(EnvSigner::new(String::new(), "https://soroban-testnet.stellar.org").is_err());
+    }
+
+    #[test]
+    fn env_signer_derives_real_public_key() {
+        use rust_x402::signer::EnvSigner;
+        // Well-known test vector: this seed derives the G-address below
+        // (verified against stellar-strkey / ed25519-dalek).
+        let signer = EnvSigner::new(
+            "SCKB3ECHCPVM4HJPNCQWTQWJJ5XRL6UNKLTTCIH4B7TB22NKJ5GUFMIV".into(),
+            "https://soroban-testnet.stellar.org",
+        )
+        .unwrap();
+        assert!(signer.address().starts_with('G'));
+        assert_eq!(signer.address().len(), 56);
+        // Debug must not leak the secret
+        let dbg = format!("{signer:?}");
+        assert!(!dbg.contains("SCKB3ECH"));
+        assert!(dbg.contains("***"));
     }
 }

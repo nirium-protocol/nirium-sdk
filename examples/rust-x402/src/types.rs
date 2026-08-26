@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use zeroize::Zeroize;
 
 pub const PAYMENT_REQUIRED_HEADER: &str = "payment-required";
 pub const PAYMENT_SIGNATURE_HEADER: &str = "PAYMENT-SIGNATURE";
@@ -15,6 +14,11 @@ pub struct Requirement {
     pub pay_to: String,
     #[serde(rename = "maxTimeoutSeconds")]
     pub max_timeout_seconds: Option<u64>,
+    /// Scheme-specific extension fields (e.g. `{"areFeesSponsored": true}`).
+    /// Preserved verbatim so the signed credential echoes exactly what the
+    /// server offered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extra: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -1,7 +1,17 @@
 use crate::signer::StellarSigner;
-use crate::types::{payment_header, Challenge, STELLAR_TESTNET};
+use crate::types::{payment_header, Challenge};
 use crate::{Result, X402Error};
 use reqwest::Client;
+
+/// Decoded `payment-response` header from a settled x402 v2 payment.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct PaymentReceipt {
+    pub success: Option<bool>,
+    pub payer: Option<String>,
+    /// Transaction hash on the payment network (resolves on stellar.expert).
+    pub transaction: Option<String>,
+    pub network: Option<String>,
+}
 
 pub struct X402Client {
     http: Client,
@@ -24,11 +34,15 @@ impl X402Client {
         Ok(resp)
     }
 
+    /// Runs the full 402 → sign → PAYMENT-SIGNATURE → retry loop.
+    ///
+    /// Returns the payment credential header, the decoded JSON body, and the
+    /// settlement receipt (tx hash) when the server sent `payment-response`.
     pub async fn pay(
         &self,
         url: &str,
         signer: &dyn StellarSigner,
-    ) -> Result<(String, serde_json::Value)> {
+    ) -> Result<(String, serde_json::Value, Option<PaymentReceipt>)> {
         let first = self.http.get(url).send().await?;
         if first.status() != reqwest::StatusCode::PAYMENT_REQUIRED {
             return Err(X402Error::MockTest(format!(
@@ -53,11 +67,17 @@ impl X402Client {
             .header(crate::types::PAYMENT_SIGNATURE_HEADER, &payment)
             .send()
             .await?;
+        let receipt = resp
+            .headers()
+            .get("payment-response")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| base64::Engine::decode(&base64::engine::general_purpose::STANDARD, v).ok())
+            .and_then(|bytes| serde_json::from_slice::<PaymentReceipt>(&bytes).ok());
         let status = resp.status();
         if !status.is_success() {
             return Err(X402Error::MockTest(format!("retry failed: {status}")));
         }
         let body = resp.json::<serde_json::Value>().await?;
-        Ok((payment, body))
+        Ok((payment, body, receipt))
     }
 }
