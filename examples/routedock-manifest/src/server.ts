@@ -55,6 +55,14 @@ app.all('/api/v1/premium/*', async (req, res) => {
       res.setHeader(k, v)
     }
   })
+  // Dialect bridge: upstream serves x402 v2 challenges as `payment-required`
+  // (with a literal "..." elision inserted mid-base64 by the upstream stack),
+  // while RouteDockClient reads `X-Payment-Requirements` and requires strict
+  // base64. Alias + strip so RouteDock clients can pay this endpoint as-is.
+  const pr = resp.headers.get('payment-required')
+  if (pr && !resp.headers.get('x-payment-requirements')) {
+    res.setHeader('X-Payment-Requirements', pr.replace(/\.\.\./g, ''))
+  }
   res.send(Buffer.from(await resp.arrayBuffer()))
 })
 

@@ -5,7 +5,7 @@
  * USDC trustline). Prints the settlement tx hash for the PR.
  */
 import { Keypair } from '@stellar/stellar-sdk'
-import { RouteDockClient } from '@routedock/sdk/client'
+import { RouteDockClient } from '@routedock/routedock/client'
 
 const secret = process.env.PAYER_SECRET
 if (!secret) {

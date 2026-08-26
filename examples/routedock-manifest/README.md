@@ -71,6 +71,30 @@ No Nirium payment logic is re-implemented here.
   through this manifest. Requires `PAYER_SECRET` (funded testnet account with
   a USDC trustline). The resulting tx hash goes in the PR.
 
+### Live run (2026-08-26, testnet)
+
+Paid and verified: the RouteDock client (zero Nirium-specific code) fetched
+the manifest, followed the 402 challenge, and settled **0.02 USDC** to the
+endpoint's payee — settlement on-chain at
+`1372536fb4b23bc094f6c46a026c34fac4053554d4f069f21443703fc953a85f`
+(testnet ledger ~4340394, payer `GBH5AOZU…XMH4` → payee `GC4Q5TWW…UOPC`),
+and the paid payload (live CETES signals) was served in the same round-trip.
+
+Two interoperability findings the run surfaced (fixed/handled here):
+
+1. **Header dialect**: Nirium's stack serves the v2 challenge as
+   `payment-required`, RouteDockClient expects `X-Payment-Requirements`.
+   The demo proxy aliases the header so RouteDock clients can pay this
+   endpoint as-is. (Upstream fix belongs in Nirium's 402 middleware or the
+   SDK's reader.)
+2. **Elided base64**: the `payment-required` value arrives with a literal
+   `...` inserted mid-base64 by the upstream stack; strict base64 decoders
+   (e.g. `atob`) throw. The proxy strips it before aliasing.
+
+Payer funding note: no faucet needed — testnet USDC was acquired on SDEX
+(XLM/USDC direct book, `pathPaymentStrictSend`, 8 XLM → 14.06 USDC,
+tx `bce448e8…5f9d992d`), a repeatable recipe for any testnet payer.
+
 ## Layout
 
 ```
