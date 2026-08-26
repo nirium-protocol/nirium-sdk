@@ -1,0 +1,43 @@
+{
+  "routedock": "1.0",
+  "name": "Nirium Premium Signals",
+  "description": "Per-request premium trading signals from the Nirium autonomous treasury agent (USDC rebalancing, CETES via Etherfuse), served live on Stellar testnet.",
+  "modes": [
+    "x402"
+  ],
+  "network": "testnet",
+  "asset": "USDC",
+  "asset_contract": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "payee": "GAQMCNVI7YGUCFBBJH25IJK7WQCTIVPHXMATRN7YJVLE54B3K5N3EF2E",
+  "pricing": {
+    "x402": {
+      "amount": "0.02",
+      "per": "request",
+      "facilitator": "https://channels.openzeppelin.com/x402/testnet"
+    }
+  },
+  "endpoints": {
+    "signals": {
+      "method": "GET",
+      "path": "/api/v1/premium/signals",
+      "headers": {
+        "X-Preferred-Mode": "x402"
+      },
+      "response_schema": {
+        "type": "object"
+      },
+      "rate_limit": {
+        "requests": 120,
+        "window_seconds": 60
+      }
+    }
+  },
+  "tags": [
+    "stellar",
+    "x402",
+    "signals",
+    "treasury",
+    "nirium"
+  ],
+  "signature": "2OJPEOUOgpU2Eo+I76TIJQNnm6M/PlS/MWvRoLOjshKuSWIE32mphx2RGyKJk+Uy7Y6dKtV95yub/gfZNr6KAA=="
+}

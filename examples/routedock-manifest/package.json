@@ -1,0 +1,27 @@
+{
+  "name": "routedock-manifest-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Serve a signed /.well-known/routedock.json manifest for a live Nirium x402 endpoint (nirium-sdk issue #72)",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "sign": "node dist/src/sign.js",
+    "test": "npm run build && node --test dist/*.test.mjs",
+    "test:live": "npm run build && node dist/src/pay-live.mjs"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.6.1",
+    "express": "^4.21.2",
+    "@routedock/routedock": "file:vendor/routedock-sdk-0.1.2.tgz"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0"
+  },
+  "overrides": {
+    "@routedock/nulth-sdk": "file:vendor/routedock-nulth-sdk-0.1.0.tgz"
+  }
+}
