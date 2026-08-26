@@ -47,7 +47,7 @@ nirium-sdk/
 ├── packages/mcp/           → MCP server (npm: nirium-mcp)
 ├── packages/cli/           → CLI (npm: nirium-cli)
 ├── docs/                   → Quickstarts and guides
-└── examples/               → Runnable integrations (Express, Next.js)
+└── examples/               → Runnable integrations (Express, Next.js, treasury vault)
 ```
 
 ---
