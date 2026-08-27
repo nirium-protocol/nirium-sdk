@@ -1,0 +1,27 @@
+{
+  "name": "nirium-sdp-audit-bridge-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "anchor": "node --import tsx src/anchor.ts",
+    "verify": "node --import tsx src/verify.ts"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.5.0",
+    "dotenv": "^17.2.3",
+    "nirium": "^0.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.30",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "Apache-2.0"
+}
