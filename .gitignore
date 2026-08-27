@@ -10,6 +10,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
-!.env.example
 .DS_Store
 examples/rust-x402/target/
+
+actions/verify-audit-cid/.npm-cache/
+actions/verify-audit-cid/lib/
+!actions/verify-audit-cid/dist/
+!actions/verify-audit-cid/dist/**
