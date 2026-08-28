@@ -1,0 +1,34 @@
+{
+  "name": "@nirium/verify-audit-cid-action",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub Action for verifying Nirium audit CIDs.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "bundle": "ncc build lib/index.js --license licenses.txt -o dist",
+    "package": "npm run build && npm run bundle",
+    "test": "npm run build && node --test test/*.test.js"
+  },
+  "keywords": [
+    "nirium",
+    "ipfs",
+    "audit",
+    "stellar",
+    "ed25519",
+    "github-action"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@vercel/ncc": "^0.38.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,38 @@
+name: Verify Nirium Audit CID
+description: Verify a Nirium audit CID hash and optional Stellar Ed25519 agent attestation.
+author: Nirium
+
+inputs:
+  cid:
+    description: IPFS CID for the Nirium audit document.
+    required: true
+  gateway:
+    description: IPFS gateway base URL. Values ending in /ipfs or /ipfs/ are used directly.
+    required: false
+    default: https://ipfs.io/ipfs/
+  fail-on-error:
+    description: Fail the workflow step when verification fails.
+    required: false
+    default: "true"
+
+outputs:
+  verified:
+    description: "true when the document hash matches and no embedded agent signature is invalid."
+  hash_match:
+    description: "true when SHA-256(JSON.stringify(record)) matches content_sha256."
+  signature_valid:
+    description: "valid, invalid, or absent."
+  signer:
+    description: Stellar G... public key from the agent attestation, when present.
+  content_sha256:
+    description: Recomputed SHA-256 hash of the audit record.
+  cid:
+    description: Echo of the CID input.
+  gateway:
+    description: Gateway URL used for the fetch.
+  error:
+    description: Error detail when verification or fetch fails.
+
+runs:
+  using: node20
+  main: dist/index.js

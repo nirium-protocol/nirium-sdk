@@ -1,0 +1,62 @@
+name: test verify audit CID action
+
+on:
+  pull_request:
+    paths:
+      - actions/verify-audit-cid/**
+      - .github/workflows/test-verify-audit-cid.yml
+  push:
+    branches:
+      - main
+    paths:
+      - actions/verify-audit-cid/**
+      - .github/workflows/test-verify-audit-cid.yml
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: actions/verify-audit-cid/package-lock.json
+
+      - name: Install action dependencies
+        working-directory: actions/verify-audit-cid
+        run: npm ci
+
+      - name: Run action unit tests
+        working-directory: actions/verify-audit-cid
+        run: npm test
+
+      - name: Verify known-good live CID
+        id: live
+        uses: ./actions/verify-audit-cid
+        with:
+          cid: QmSSZdtt3dQ8BqUm62zrKQ85E4BUHYiVfvDgZmHfJsqU1U
+          gateway: https://gateway.pinata.cloud/ipfs/
+
+      - name: Assert live verification passed
+        run: test "${{ steps.live.outputs.verified }}" = "true"
+
+      - name: Start fixture IPFS gateway
+        working-directory: actions/verify-audit-cid
+        run: |
+          node test/fixtures/server.mjs &
+          sleep 1
+
+      - name: Deliberate tampered CID fails
+        id: tampered
+        continue-on-error: true
+        uses: ./actions/verify-audit-cid
+        with:
+          cid: tampered-audit
+          gateway: http://127.0.0.1:8787/ipfs/
+          fail-on-error: "true"
+
+      - name: Assert tampered verification failed visibly
+        if: steps.tampered.outcome != 'failure'
+        run: exit 1
