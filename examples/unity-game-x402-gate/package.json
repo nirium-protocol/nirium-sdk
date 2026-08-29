@@ -1,0 +1,34 @@
+{
+  "name": "nirium-unity-game-x402-gate-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference pattern: gate a Unity game action behind x402 pay-per-action using nirium's x402Serve(), signed from a Stellar Unity Developer Kit (SUDK) client.",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "dev": "node --import tsx src/server.ts",
+    "wallet-bridge-smoke": "node --import tsx scripts/wallet-bridge-smoke.ts"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^15.1.0",
+    "@x402/core": "^2.24.0",
+    "@x402/express": "^2.24.0",
+    "@x402/fetch": "^2.24.0",
+    "@x402/stellar": "^2.24.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nirium": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.30",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "Apache-2.0"
+}
