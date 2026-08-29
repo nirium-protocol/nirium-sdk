@@ -4,7 +4,7 @@ export default function Home() {
       <h1>Nirium x402 Next.js example</h1>
       <p>
         Call <code>/api/premium/signals</code> to receive an x402 payment
-        challenge, then retry with an <code>X-PAYMENT</code> header.
+        challenge, then retry with a <code>PAYMENT-SIGNATURE</code> header.
       </p>
     </main>
   );

@@ -17,3 +17,4 @@ actions/verify-audit-cid/.npm-cache/
 actions/verify-audit-cid/lib/
 !actions/verify-audit-cid/dist/
 !actions/verify-audit-cid/dist/**
+.next/
