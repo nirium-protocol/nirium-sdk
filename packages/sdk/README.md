@@ -1,6 +1,6 @@
 # nirium
 
-Official TypeScript SDK for the **Nirium Protocol** — autonomous AI treasury infrastructure on Stellar/Soroban.
+Autonomous treasury and agentic-payments infrastructure for **Nirium Protocol** on Stellar/Soroban.
 
 Nirium agents rebalance USDC ↔ CETES (tokenized Mexican T-bills via Etherfuse) 24/7 without human intervention. Built for developers who want to integrate autonomous treasury management, agentic payments (x402 + MPP), and real-time market signals into their applications.
 
