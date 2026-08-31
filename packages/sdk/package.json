@@ -1,6 +1,6 @@
 {
   "name": "nirium",
-  "version": "0.12.0",
+  "version": "0.13.2",
   "description": "Official TypeScript SDK for the Nirium autonomous agent economy on Stellar (x402 + MPP)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
