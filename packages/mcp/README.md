@@ -1,6 +1,6 @@
 # nirium-mcp
 
-Model Context Protocol server for [Nirium](https://nirium.xyz) — exposes market data, autonomous treasury loop control, and x402/MPP paid signals to any MCP-compatible AI: Claude, GPT, Cursor, VS Code Copilot, and others.
+Model Context Protocol server for [Nirium](https://nirium.xyz) — exposes market data, autonomous treasury loop control, and x402/MPP paid endpoints to any MCP-compatible AI: Claude, GPT, Cursor, VS Code Copilot, and others.
 
 Software-only. This server never holds funds — paid tools sign per-request payments from a Stellar wallet you control via `STELLAR_SECRET_KEY`.
 
@@ -44,12 +44,12 @@ No install needed — run directly with `npx`, or add to your MCP client config.
 - `stop_loop` — stop it
 
 **Paid via x402 — requires a funded `STELLAR_SECRET_KEY`**
-- `get_premium_signals` — $0.02 USDC — arbitrage signals with execution paths and confidence scores
-- `get_premium_market` — $0.05 USDC — enriched market state
-- `execute_paid_strategy` — $0.25 USDC — execute a strategy on-chain, no account required
+- `get_premium_signals` — $0.02 USDC — **testnet only**; signals come from the autonomous loop, which runs on testnet. They reference testnet tokens, which have no monetary value, and are not a recommendation to buy, sell or hold anything. The mainnet box returns 501 without charging.
+- `get_premium_market` — $0.05 USDC — market state with reference rates attributed to their source, fee pressure and network conditions. Factual data, no advice.
+- `execute_paid_strategy` — $0.25 USDC — **testnet only**; execution needs a signing key and the mainnet box holds none by design, so it returns 501 without charging.
 
 **Paid via MPP — requires a funded `STELLAR_SECRET_KEY`**
-- `get_mpp_signals` — $0.02 USDC — same signal data as `get_premium_signals`, settled via direct Soroban SAC transfer, no external facilitator
+- `get_mpp_signals` — $0.02 USDC — same data and same testnet-only limit as `get_premium_signals`, settled via direct Soroban SAC transfer with no external facilitator
 - `get_mpp_market` — $0.05 USDC — same as `get_premium_market`, MPP-settled
 
 ## Environment variables

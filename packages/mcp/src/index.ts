@@ -3,7 +3,7 @@
 // Copyright 2026 Nirium Protocol Contributors
 
 // ═══════════════════════════════════════════════════════════════
-// Nirium MCP Server v0.5.0 — x402 + MPP + node tool suite
+// Nirium MCP Server v0.6.0 — x402 + MPP + node tool suite
 // ═══════════════════════════════════════════════════════════════
 //
 // Exposes Nirium Protocol capabilities to any MCP-compatible AI:
@@ -139,7 +139,7 @@ if (PAYMENTS_ENABLED) {
 // ─── Server ───────────────────────────────────────────────────
 
 const server = new McpServer(
-    { name: 'nirium-mcp-server', version: '0.5.0' },
+    { name: 'nirium-mcp-server', version: '0.6.0' },
     { capabilities: { tools: {} } },
 );
 
@@ -258,7 +258,7 @@ server.tool(
 
 server.tool(
     'get_premium_signals',
-    'PAID ($0.02 USDC via x402) — Premium arbitrage signals with execution paths, confidence scores, profit estimates, and valid-until ledger windows. Requires funded Stellar wallet.',
+    'PAID ($0.02 USDC via x402) — TESTNET ONLY: signals are produced by the autonomous loop, which runs on testnet; the mainnet box has no loop and returns 501 without charging. Signals reference testnet tokens, which have no monetary value, and are not a recommendation to buy, sell or hold anything. Requires funded Stellar wallet.',
     {
         count: z.number().optional().describe('Number of signals to fetch (default: 20, max: 100)'),
     },
@@ -269,7 +269,7 @@ server.tool(
 
 server.tool(
     'get_premium_market',
-    'PAID ($0.05 USDC via x402) — Enriched market state: arbitrage windows, yield ranking, fee pressure alerts, and execution recommendation. Requires funded Stellar wallet.',
+    'PAID ($0.05 USDC via x402) — Market state with reference rates attributed to their source, network fee pressure, and a description of current network conditions. Factual data only: no recommendation, no advice, no signal to act. Requires funded Stellar wallet.',
     {},
     async () =>
         paymentsUnavailable()
@@ -306,8 +306,17 @@ server.tool(
         x402Enabled: PAYMENTS_ENABLED,
         mppEnabled: PAYMENTS_ENABLED,
         ...(PAYMENTS_ENABLED ? {} : { paymentsDisabledReason: PAYMENTS_DISABLED_REASON }),
-        freeTools: ['get_market_state', 'get_loop_status', 'execute_demo', 'get_nodes', 'anchor_audit_record', 'get_reporting_summary'],
-        authenticatedTools: ['start_loop', 'stop_loop'],
+        freeTools: [
+            'get_market_state', 'get_loop_status', 'execute_demo', 'get_nodes',
+            'anchor_audit_record', 'get_reporting_summary',
+            'get_treasury_info', 'get_treasury_vault', 'get_treasury_vaults', 'get_treasury_strategy_asset',
+        ],
+        authenticatedTools: [
+            'start_loop', 'stop_loop',
+            'deploy_treasury_vault', 'deposit_to_treasury_vault', 'withdraw_from_treasury_vault',
+            'set_treasury_rebalance_manager', 'build_treasury_rebalance', 'execute_treasury_rebalance',
+            'submit_treasury_tx',
+        ],
         paidToolsX402: ['get_premium_signals', 'get_premium_market', 'execute_paid_strategy'],
         paidToolsMpp: ['get_mpp_signals', 'get_mpp_market'],
     }),
@@ -379,7 +388,7 @@ server.tool(
 
 server.tool(
     'get_mpp_signals',
-    'PAID ($0.02 USDC via MPP Charge) — Premium arbitrage signals settled via direct Soroban SAC transfer. No external facilitator. Same signal data as get_premium_signals. Requires funded Stellar wallet.',
+    'PAID ($0.02 USDC via MPP Charge) — TESTNET ONLY, same data as get_premium_signals, settled via direct Soroban SAC transfer with no external facilitator. Testnet tokens have no monetary value; this is not a recommendation to buy, sell or hold anything. Requires funded Stellar wallet.',
     {
         count: z.number().optional().describe('Number of signals to fetch (default: 20, max: 100)'),
     },
@@ -390,11 +399,187 @@ server.tool(
 
 server.tool(
     'get_mpp_market',
-    'PAID ($0.05 USDC via MPP Charge) — Enriched market state settled via direct Soroban SAC transfer. No external facilitator. Includes arbitrage windows, yield ranking, and fee alerts. Requires funded Stellar wallet.',
+    'PAID ($0.05 USDC via MPP Charge) — Market state settled via direct Soroban SAC transfer, no external facilitator. Reference rates with their source, fee pressure, and network conditions. Factual data only: no recommendation or advice. Requires funded Stellar wallet.',
     {},
     async () =>
         paymentsUnavailable()
         ?? callJson(`${API_URL}/api/v1/mpp/market`, undefined, mppFetch),
+);
+
+// ─── TREASURY (DeFindex) ───────────────────────────────────────
+//
+// Nirium never holds these funds. It holds the RebalanceManager role of a
+// DeFindex vault the client deploys and owns. The four read tools below hit
+// public GET routes — free, no key required. The write tools hit routes
+// behind the agent's own auth (NIRIUM_API_KEY) and every one of them returns
+// an UNSIGNED XDR *except* execute_treasury_rebalance, which is the one
+// route the agent signs itself, with its own server-side key — never the
+// caller's. Even then it cannot withdraw: rebalance() takes no destination
+// address, so the funds never leave the vault.
+//
+
+server.tool(
+    'get_treasury_info',
+    'Treasury node metadata: what role Nirium holds on DeFindex vaults, what it can and cannot do, fees, security notes. Free.',
+    {},
+    async () => callJson(`${API_URL}/api/treasury/info`),
+);
+
+server.tool(
+    'get_treasury_vault',
+    "Read a DeFindex vault's roles, assets and managed funds. Pass `holder` to also get that account's balance in the vault's asset. Free.",
+    {
+        vaultId: z.string().describe('Vault contract id (C...)'),
+        holder: z.string().optional().describe('Stellar account (G...) to check the balance of'),
+    },
+    async (args) => {
+        const q = args.holder ? `?holder=${encodeURIComponent(args.holder)}` : '';
+        return callJson(`${API_URL}/api/treasury/vault/${args.vaultId}${q}`);
+    },
+);
+
+server.tool(
+    'get_treasury_vaults',
+    'List DeFindex vaults Nirium has deployed or read, on the current network. Free.',
+    {
+        manager: z.string().optional().describe('Filter by vault Manager (G...)'),
+    },
+    async (args) => {
+        const q = args.manager ? `?manager=${encodeURIComponent(args.manager)}` : '';
+        return callJson(`${API_URL}/api/treasury/vaults${q}`);
+    },
+);
+
+server.tool(
+    'get_treasury_strategy_asset',
+    'Read which asset a DeFindex strategy manages, as declared by the strategy itself — pairs it correctly before deploying a vault. Free.',
+    {
+        strategyId: z.string().describe('Strategy contract id (C...)'),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/strategy/${args.strategyId}`),
+);
+
+server.tool(
+    'deploy_treasury_vault',
+    "Build an UNSIGNED XDR to deploy a DeFindex vault. `manager` keeps control (rescue, pause, revoke); Nirium only ever holds `rebalanceManager`, which cannot withdraw or change roles. Sign the returned XDR with `caller` and broadcast it with submit_treasury_tx. Requires NIRIUM_API_KEY env var.",
+    {
+        manager: z.string().describe('Stellar account (G...) that owns and controls the vault'),
+        caller: z.string().describe('Stellar account (G...) that pays to deploy and signs the returned XDR'),
+        assets: z.array(z.object({
+            address: z.string().describe('Asset contract id (C...)'),
+            strategies: z.array(z.object({
+                address: z.string().describe('Strategy contract id (C...)'),
+                name: z.string(),
+            })).min(1),
+        })).min(1),
+        name: z.string(),
+        symbol: z.string(),
+        emergencyManager: z.string().optional().describe('Defaults to `manager`'),
+        feeReceiver: z.string().optional().describe('Defaults to `manager`'),
+        rebalanceManager: z.string().optional().describe("Defaults to Nirium's configured role address; required as an explicit value on mainnet"),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/deploy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
+);
+
+server.tool(
+    'deposit_to_treasury_vault',
+    'Build an UNSIGNED XDR to deposit into a DeFindex vault. Sign with `from` and broadcast it with submit_treasury_tx. Requires NIRIUM_API_KEY env var.',
+    {
+        vault: z.string().describe('Vault contract id (C...)'),
+        from: z.string().describe('Stellar account (G...) funding the deposit and signing the returned XDR'),
+        amounts: z.array(z.string()).min(1).describe('One amount per vault asset, in stroops, as strings — an i128 does not survive a JSON number'),
+        invest: z.boolean().optional().describe('Invest the deposit into the strategy immediately. Default true.'),
+        maxSlippageBps: z.number().optional(),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/deposit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
+);
+
+server.tool(
+    'withdraw_from_treasury_vault',
+    'Build an UNSIGNED XDR to withdraw from a DeFindex vault. Omit `shares` to withdraw everything the account holds. Sign with `from` and broadcast it with submit_treasury_tx. Requires NIRIUM_API_KEY env var.',
+    {
+        vault: z.string().describe('Vault contract id (C...)'),
+        from: z.string().describe('Stellar account (G...) holding the vault shares and signing the returned XDR'),
+        shares: z.string().optional().describe('Vault shares to redeem, as an integer string. Omit to withdraw everything.'),
+        maxSlippageBps: z.number().optional(),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
+);
+
+server.tool(
+    'set_treasury_rebalance_manager',
+    "Build an UNSIGNED XDR handing the RebalanceManager role to a new address. Only the vault's current Manager can sign it — the same door that grants Nirium the role also revokes it. Requires NIRIUM_API_KEY env var.",
+    {
+        vault: z.string().describe('Vault contract id (C...)'),
+        manager: z.string().describe("The vault's current Manager (G...), who must sign the returned XDR"),
+        rebalanceManager: z.string().describe('The new RebalanceManager address (G...)'),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/set-rebalance-manager`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
+);
+
+const treasuryInstruction = z.object({
+    kind: z.enum(['Unwind', 'Invest']),
+    strategy: z.string().describe('Strategy contract id (C...)'),
+    amount: z.string().describe('Stroops, as a string — an i128 does not survive a JSON number'),
+});
+
+server.tool(
+    'build_treasury_rebalance',
+    "Build an UNSIGNED rebalance XDR — Unwind/Invest between a vault's own strategies only; no other instruction is expressible, and none takes a destination address. Sign with the vault's RebalanceManager and broadcast it with submit_treasury_tx. Requires NIRIUM_API_KEY env var.",
+    {
+        vault: z.string().describe('Vault contract id (C...)'),
+        instructions: z.array(treasuryInstruction).min(1),
+        caller: z.string().optional().describe("Defaults to Nirium's configured rebalanceManager address"),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/rebalance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
+);
+
+server.tool(
+    'execute_treasury_rebalance',
+    "Sign and submit a rebalance with Nirium's OWN RebalanceManager key, server-side, and wait for confirmation — the only treasury tool that signs anything itself, and it still cannot withdraw funds. Only available where that key actually lives; a receive-only mainnet box returns 501 by design, not a broken 500. Requires NIRIUM_API_KEY env var.",
+    {
+        vault: z.string().describe('Vault contract id (C...)'),
+        instructions: z.array(treasuryInstruction).min(1),
+        caller: z.string().optional().describe("Defaults to Nirium's configured rebalanceManager address"),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/rebalance/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
+);
+
+server.tool(
+    'submit_treasury_tx',
+    'Broadcast a treasury XDR you already signed (deploy/deposit/withdraw/rebalance/set-rebalance-manager) and wait for confirmation. Requires NIRIUM_API_KEY env var.',
+    {
+        xdr: z.string().describe('Signed transaction XDR'),
+    },
+    async (args) => callJson(`${API_URL}/api/treasury/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(args),
+    }),
 );
 
 // ─── Start ────────────────────────────────────────────────────
@@ -402,7 +587,7 @@ server.tool(
 async function main(): Promise<void> {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('[Nirium MCP] v0.5.0 running on stdio');
+    console.error('[Nirium MCP] v0.6.0 running on stdio');
     console.error(`[Nirium MCP] Agent API: ${API_URL}`);
     console.error(`[Nirium MCP] NIRIUM_API_KEY set: ${!!NIRIUM_API_KEY}`);
     console.error(`[Nirium MCP] x402 enabled: ${!!STELLAR_KEY}`);
