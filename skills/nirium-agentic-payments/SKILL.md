@@ -1,14 +1,15 @@
 ---
 name: nirium-agentic-payments
 description: >-
-  Scaffold and run agentic-payment infrastructure on Stellar with the
-  Nirium toolkit: charge AI agents per API call with x402Serve() from the
-  nirium SDK, scaffold a working paid server with nirium-cli in one
-  command, and read live protocol data through the nirium-mcp server.
-  Use when the user wants to charge AI agents for API access on Stellar,
-  needs a working x402 seller in minutes without hand-rolling the
-  facilitator client, or wants an MCP-connected agent to read market
-  state / control an autonomous loop on a running Stellar agent.
+  Scaffold and run an x402 paid API server on Stellar with open-source
+  client libraries: charge AI agents per API call with x402Serve(), a
+  function from the nirium SDK that runs entirely on your own server,
+  scaffold that server with nirium-cli in one command, and separately
+  read live protocol data through the nirium-mcp server. Use when the
+  user wants to charge AI agents for API access on Stellar, needs a
+  working x402 seller in minutes without hand-rolling the facilitator
+  client, or wants an MCP-connected agent to read market state / control
+  an autonomous loop on a running Stellar agent.
 license: Apache-2.0
 metadata:
   homepage: https://nirium.xyz
@@ -17,11 +18,22 @@ metadata:
 
 # Nirium: charge AI agents and read live signals on Stellar
 
-Nirium is an open-source toolkit for x402 agentic payments on Stellar:
-a TypeScript/Python SDK, a scaffolding CLI, and an MCP server. It is not
-a demo — the mainnet endpoint has been billing real USDC over x402 since
-9 July 2026. A mainnet settlement from that day, verifiable on Stellar
-Expert: [`3134a51c…7558bc`](https://stellar.expert/explorer/public/tx/3134a51c66091fd7fbd85b38a4a6ec6cd432bb92c2450eac84ea7855cb7558bc).
+Nirium publishes open-source client libraries for x402 agentic payments
+on Stellar — a TypeScript/Python SDK, a scaffolding CLI, and an MCP
+server. `x402Serve()`, the function these scaffold around, runs on
+**your own server**: Nirium doesn't operate, host, or route through
+anything in that path, and never sees your end users' requests. It's
+not a demo — Nirium's own mainnet endpoint, running the identical
+function, has been billing real USDC over x402 since 9 July 2026. A
+mainnet settlement from that day, verifiable on Stellar Expert:
+[`3134a51c…7558bc`](https://stellar.expert/explorer/public/tx/3134a51c66091fd7fbd85b38a4a6ec6cd432bb92c2450eac84ea7855cb7558bc).
+
+**You're responsible for your own compliance.** `x402Serve()` is a
+general-purpose library, not a service Nirium provides to your end
+users — you choose what to charge for, who `payTo` is, and which
+jurisdiction you operate in. You remain solely responsible for
+complying with the financial, tax, and consumer-protection laws that
+apply to your own use of it.
 
 ## Do this
 
@@ -69,6 +81,12 @@ handler returns. No subscription, no card, no invoice, no human in the
 middle. This is the exact pattern Nirium's own mainnet endpoint runs in
 production against real callers — see the devlog for a real incident
 (and its fix) from operating it at scale: [docs/devlog.md](https://github.com/nirium-protocol/nirium-sdk/blob/main/docs/devlog.md).
+
+Optional, off by default: set `NIRIUM_X402SERVE_TELEMETRY=true` if you
+want to send Nirium a non-blocking usage ping (your `payTo`, a
+SHA-256 hash of your `facilitatorApiKey` — never the key itself,
+network, route/request counts, SDK version). It never affects a
+payment either way, on or off.
 
 ### 3. Read live protocol data with `nirium-mcp`
 
